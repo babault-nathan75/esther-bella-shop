@@ -32,17 +32,18 @@ export default function ShopLayout({ children }) {
           <header className="bg-black border-b border-yellow-600 sticky top-0 z-50 shadow-2xl">
             <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
               
-              {/* Left: Nav - Mobile & Desktop avec Soulignement Animé */}
-              <nav className="flex items-center gap-4 md:gap-10 text-[9px] md:text-[11px] uppercase tracking-[0.2em] md:tracking-[0.3em] font-bold text-yellow-600">
+              {/* Left: Nav - Icônes sur Mobile / Texte sur Desktop */}
+              <nav className="flex items-center gap-6 md:gap-10 text-[9px] md:text-[11px] uppercase tracking-[0.2em] md:tracking-[0.3em] font-bold text-yellow-600">
                 <Link href="/shop" className="group relative flex items-center gap-2 hover:text-white transition-colors duration-300 py-2">
-                  <Layers size={14} className="md:hidden" /> 
-                  <span>Collections</span>
-                  <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-yellow-600 transition-all duration-300 group-hover:w-full"></span>
+                  <Layers size={20} className="md:hidden" /> {/* Icône Seule sur Mobile */}
+                  <span className="hidden md:inline">Collections</span> {/* Texte seulement sur Ordi */}
+                  <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-yellow-600 transition-all duration-300 group-hover:w-full hidden md:block"></span>
                 </Link>
+                
                 <Link href="/nouveautes" className="group relative flex items-center gap-2 hover:text-white transition-colors duration-300 py-2">
-                  <Sparkles size={14} className="md:hidden" />
-                  <span>Nouveautés</span>
-                  <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-yellow-600 transition-all duration-300 group-hover:w-full"></span>
+                  <Sparkles size={20} className="md:hidden" /> {/* Icône Seule sur Mobile */}
+                  <span className="hidden md:inline">Nouveautés</span> {/* Texte seulement sur Ordi */}
+                  <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-yellow-600 transition-all duration-300 group-hover:w-full hidden md:block"></span>
                 </Link>
               </nav>
 
@@ -51,14 +52,13 @@ export default function ShopLayout({ children }) {
                 <div className="relative w-10 h-10 md:w-12 md:h-12 mb-1 transform group-hover:scale-110 transition-transform duration-500 border border-yellow-600/30 rounded-full p-1">
                   <Image src="/logo.jpg" alt="EBF Logo" fill className="object-contain rounded-full" />
                 </div>
-                <h1 className={`${playfair.className} text-yellow-600 text-sm md:text-2xl font-bold tracking-[0.1em] uppercase leading-none text-center italic hidden sm:block`}>
+                <h1 className={`${playfair.className} text-yellow-600 text-sm md:text-2xl font-bold tracking-[0.1em] uppercase leading-none text-center italic`}>
                   Esther Bella Fashion
                 </h1>
               </Link>
 
               {/* Right: Icons - Doré Premium */}
-              <div className="flex items-center gap-4 md:gap-6 text-yellow-600">
-
+              <div className="flex items-center gap-5 md:gap-6 text-yellow-600">
                 <Link href="/cart" className="relative group">
                   <ShoppingBag size={22} className="group-hover:scale-110 transition-transform duration-300" />
                   <HeaderCount />
@@ -73,7 +73,7 @@ export default function ShopLayout({ children }) {
 
           <main>{children}</main>
 
-          {/* --- FOOTER ÉDITORIAL GOLD & BLACK --- */}
+          {/* --- FOOTER --- */}
           <footer className="bg-black text-white border-t border-yellow-600 pt-20 pb-10 font-light">
             <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-16 mb-20 text-center md:text-left">
               
