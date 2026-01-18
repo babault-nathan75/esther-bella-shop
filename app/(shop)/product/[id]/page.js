@@ -8,8 +8,31 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 
+// --- 1. GÉNÉRATION DYNAMIQUE DES MÉTADONNÉES SEO ---
+export async function generateMetadata({ params }) {
+  await connectToDB();
+  const { id } = await params;
+  
+  try {
+    const product = await Product.findById(id);
+    if (!product) return { title: "Pièce introuvable" };
+
+    return {
+      title: product.title,
+      description: `${product.title} par Esther Bella Fashion. ${product.description?.substring(0, 150)}...`,
+      openGraph: {
+        title: `${product.title} | Maison Esther Bella`,
+        description: product.description?.substring(0, 160),
+        images: [{ url: product.images?.[0] }],
+      },
+    };
+  } catch (e) {
+    return { title: "Boutique Prestige" };
+  }
+}
+
 export default async function ProductPage({ params }) {
-  // 1. Connexion à la base de données (côté serveur)
+  // 1. Connexion à la base de données
   await connectToDB();
   
   // 2. Récupération sécurisée de l'ID
@@ -17,7 +40,7 @@ export default async function ProductPage({ params }) {
   
   let productDoc;
   try {
-    // 3. Recherche du produit avec une gestion d'erreur propre
+    // 3. Recherche du produit
     productDoc = await Product.findById(id);
   } catch (error) {
     return notFound();
@@ -27,7 +50,6 @@ export default async function ProductPage({ params }) {
   if (!productDoc) {
     return (
       <div className="min-h-[85vh] flex flex-col items-center justify-center px-6 text-center bg-white">
-        {/* Décoration de fond subtile */}
         <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
           <h1 className="text-[20vw] font-black uppercase tracking-tighter">Esther</h1>
         </div>
@@ -61,7 +83,7 @@ export default async function ProductPage({ params }) {
   // 5. Conversion Prestige des données
   const product = JSON.parse(JSON.stringify(productDoc));
 
-  // 6. Rendu du composant Client (L'expérience d'achat totale)
+  // 6. Rendu du composant Client
   return (
     <div className="bg-white animate-in fade-in duration-1000">
       <ProductClient product={product} />
