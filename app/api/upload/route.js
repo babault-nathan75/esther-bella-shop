@@ -4,10 +4,10 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 export async function POST(req) {
   // 0. DIAGNOSTIC DE SÉCURITÉ (Pour déboguer l'erreur Vercel)
   // Cela vérifie si les clés existent AVANT d'essayer de se connecter
-  if (!process.env.S3_ACCESS_KEY || !process.env.S3_SECRET_ACCESS_KEY) {
+  if (!process.env.S3_ACCESS_KEY || !process.env.S3_SECRET_KEY) {
     console.error("❌ ERREUR CRITIQUE : Les variables d'environnement AWS sont vides !");
     console.log("État S3_ACCESS_KEY :", process.env.S3_ACCESS_KEY ? "✅ Présente" : "❌ MANQUANTE (Vérifiez l'orthographe sur Vercel)");
-    console.log("État S3_SECRET_ACCESS_KEY :", process.env.S3_SECRET_ACCESS_KEY ? "✅ Présente" : "❌ MANQUANTE");
+    console.log("État S3_SECRET_KEY :", process.env.S3_SECRET_KEY ? "✅ Présente" : "❌ MANQUANTE");
     console.log("État S3_REGION :", process.env.S3_REGION);
     console.log("État S3_BUCKET_NAME :", process.env.S3_BUCKET_NAME);
     
@@ -19,7 +19,7 @@ export async function POST(req) {
     region: process.env.S3_REGION,
     credentials: {
       accessKeyId: process.env.S3_ACCESS_KEY,
-      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+      secretAccessKey: process.env.S3_SECRET_KEY,
     },
   });
 
