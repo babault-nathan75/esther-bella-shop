@@ -4,7 +4,11 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**', // Autorise tous les domaines (pratique pour le dév)
+        hostname: '*.amazonaws.com', // ✅ Autorise tous les buckets AWS S3
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com', // (Optionnel) Pour les photos de profil Google
       },
     ],
   },
