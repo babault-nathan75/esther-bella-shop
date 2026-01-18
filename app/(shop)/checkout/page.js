@@ -1,4 +1,7 @@
 "use client";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { useContext, useState } from "react";
 import { CartContext } from "@/context/CartContext";
 import { ChevronLeft, Send, MapPin, User, Loader2, CheckCircle2, Wallet, AlertCircle } from "lucide-react";
@@ -108,7 +111,7 @@ export default function CheckoutPage() {
                 <p className="text-[11px] leading-relaxed text-zinc-300">Vérifiez votre WhatsApp. Notre équipe valide le paiement avec vous.</p>
             </div>
             <Link href="/" className="block w-full text-white/40 pt-6 text-[10px] uppercase tracking-widest hover:text-white transition">
-              Retour à l'accueil
+              Retour à l&apos;accueil
             </Link>
           </div>
         </div>
@@ -138,7 +141,7 @@ export default function CheckoutPage() {
         )}
 
         <h1 className="text-4xl md:text-6xl font-black text-black uppercase tracking-tighter mb-12">
-          Finaliser <span className="font-serif italic text-yellow-600 lowercase font-light">l'achat</span>
+          Finaliser <span className="font-serif italic text-yellow-600 lowercase font-light">l&apos;achat</span>
         </h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">

@@ -1,9 +1,13 @@
 "use client";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { Save, ArrowLeft, Link as LinkIcon, FolderUp, Eye, FileVideo, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Save, ArrowLeft, Link as LinkIcon, FolderUp, Eye, Image as ImageIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image"; // Import the Image component
 
 export default function NewProductPage() {
   const [title, setTitle] = useState("");
@@ -227,7 +231,7 @@ export default function NewProductPage() {
                   {isVideo(media) ? (
                     <video src={media} controls className="max-h-60 rounded-xl" />
                   ) : (
-                    <img src={media} alt="Aperçu" className="max-h-60 object-contain rounded-xl" />
+                    <Image src={media} alt="Aperçu" className="max-h-60 object-contain rounded-xl" width={500} height={500} />
                   )}
                 </div>
              </div>
@@ -236,7 +240,7 @@ export default function NewProductPage() {
 
         {/* Description */}
         <div>
-          <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">L'Éditorial (Description)</label>
+          <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">L&apos;Éditorial (Description)</label>
           <textarea 
             placeholder="Détails du produit..."
             className="w-full bg-gray-50 border-none rounded-[2rem] p-6 text-sm font-medium h-32 focus:ring-2 focus:ring-yellow-600/20 transition-all outline-none resize-none"

@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { connectToDB } from "@/lib/mongoose";
 import { Product } from "@/lib/models/Product";
 import Link from "next/link";
@@ -34,7 +37,7 @@ export default async function NouveautesPage() {
             New <br/> <span className="text-yellow-600 italic font-serif lowercase font-light">Arrivals</span>
           </h1>
           <p className="max-w-xl mx-auto text-[10px] text-gray-400 uppercase tracking-[0.5em] leading-loose text-center">
-            L'expression la plus récente de notre savoir-faire. Des pièces rares, disponibles en quantités limitées.
+            L&apos;expression la plus récente de notre savoir-faire. Des pièces rares, disponibles en quantités limitées.
           </p>
         </div>
 
@@ -129,7 +132,7 @@ export default async function NouveautesPage() {
         <div className="mt-48 text-center border-t border-gray-100 pt-24">
           <Link href="/shop" className="group inline-flex flex-col items-center gap-4">
             <span className="text-[10px] font-black uppercase tracking-[0.6em] text-gray-300 group-hover:text-black transition-colors">
-              Explorer l'entièreté du Showroom
+              Explorer l&apos;entièreté du Showroom
             </span>
             <div className="h-10 w-px bg-gray-100 group-hover:bg-yellow-600 group-hover:h-20 transition-all duration-700"></div>
           </Link>

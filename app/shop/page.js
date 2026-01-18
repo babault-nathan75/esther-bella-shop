@@ -1,10 +1,14 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { connectToDB } from "@/lib/mongoose";
 import { Product } from "@/lib/models/Product";
 import { Category } from "@/lib/models/Category";
 import ShopClient from "@/components/ShopClient";
 import ShopHeader from "@/components/ShopHeader";
 import ScrollProgress from "@/components/ScrollProgress";
-import { Instagram, MapPin, ShieldCheck, ArrowLeft } from "lucide-react";
+import { MapPin, ShieldCheck, ArrowLeft } from "lucide-react";
+import { Instagram as SimpleInstagram } from "simple-icons-react"; // Import Simple Icons
 import Link from "next/link";
 
 // Métadonnées pour le SEO - Fonctionne car c'est un Server Component
@@ -75,7 +79,7 @@ export default async function ShopPage() {
             <div className="space-y-8">
               <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-yellow-600">La Maison</h3>
               <p className="text-gray-400 text-xs leading-loose uppercase tracking-widest">
-                Esther Bella Fashion redéfinit l'élégance féminine à travers des pièces qui allient tradition africaine et modernité haute couture. Chaque création est un hommage à la femme de pouvoir.
+                Esther Bella Fashion redéfinit l&apos;élégance féminine à travers des pièces qui allient tradition africaine et modernité haute couture. Chaque création est un hommage à la femme de pouvoir.
               </p>
             </div>
 
@@ -91,7 +95,7 @@ export default async function ShopPage() {
                   <span className="text-[10px] font-bold uppercase tracking-widest text-gray-300 group-hover:text-white transition-colors">Showroom Abidjan, CI</span>
                 </li>
                 <li className="flex items-center gap-4 group cursor-default">
-                  <Instagram size={16} className="text-yellow-600" />
+                  <SimpleInstagram size={16} className="text-yellow-600" />
                   <span className="text-[10px] font-bold uppercase tracking-widest text-gray-300 group-hover:text-white transition-colors">@estherbellafashion</span>
                 </li>
               </ul>
@@ -106,7 +110,7 @@ export default async function ShopPage() {
                   className="bg-transparent border-b border-white/20 py-4 text-[10px] font-black tracking-widest focus:border-yellow-600 outline-none transition-all placeholder:text-gray-600 uppercase"
                 />
                 <button className="text-[9px] font-black uppercase tracking-[0.4em] text-yellow-600 text-left hover:text-white transition-colors">
-                  Rejoindre la liste d'attente →
+                  Rejoindre la liste d&apos;attente &rarr;
                 </button>
               </div>
             </div>

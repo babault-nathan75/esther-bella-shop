@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { connectToDB } from "@/lib/mongoose";
 import { Product } from "@/lib/models/Product";
 import { Category } from "@/lib/models/Category";
@@ -197,7 +200,7 @@ export default async function HomePage() {
                           <source src={productMedia} type="video/mp4" />
                         </video>
                       ) : (
-                        <Image 
+                        <Image
                           src={productMedia} 
                           alt={product.title}
                           fill

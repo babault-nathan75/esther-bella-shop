@@ -1,9 +1,12 @@
 "use client";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { useContext } from "react";
 import { CartContext } from "@/context/CartContext";
 import { Trash2, ArrowRight, ShoppingBag, ChevronLeft, AlertCircle } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import Image from "next/image"; // Commenting out unused import
 
 export default function CartPage() {
   const { cartProducts, removeProduct } = useContext(CartContext);
@@ -26,7 +29,7 @@ export default function CartPage() {
         </div>
         <h2 className="text-3xl font-serif italic text-black mb-4">Votre sélection est vide</h2>
         <p className="text-gray-400 text-sm uppercase tracking-[0.2em] mb-10">
-          L'élégance n'attend que vous.
+          L&apos;élégance n&apos;attend que vous.
         </p>
         <Link href="/shop" className="bg-black text-white px-12 py-4 rounded-full font-black uppercase text-xs tracking-[0.3em] hover:bg-yellow-600 hover:text-black hover:scale-105 transition-all shadow-2xl">
           Découvrir la Collection
@@ -75,10 +78,12 @@ export default function CartPage() {
                   
                   {/* Miniature Image */}
                   <div className="relative w-24 h-32 md:w-32 md:h-44 bg-gray-100 overflow-hidden rounded-sm shadow-md flex-shrink-0">
-                    <img 
+                    <Image 
                       src={item.images?.[0]} 
                       alt={item.title} 
                       className={`w-full h-full object-cover transition-transform duration-700 ${!isSoldOut && 'group-hover:scale-110'} ${isSoldOut ? 'grayscale' : ''}`} 
+                      width={500} // specify appropriate width
+                      height={500} // specify appropriate height
                     />
                     {isSoldOut && (
                       <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[1px]">
@@ -151,7 +156,7 @@ export default function CartPage() {
               {/* --- BOUTON DE PAIEMENT BLOQUÉ --- */}
               {hasOutOfStockItems ? (
                 <div className="w-full bg-zinc-800 text-zinc-500 h-16 rounded-full font-black uppercase text-[9px] tracking-[0.2em] flex items-center justify-center text-center px-6 cursor-not-allowed border border-white/5 opacity-80">
-                  Retirer les articles "Sold Out" pour payer
+                  Retirer les articles &quot;Sold Out&quot; pour payer
                 </div>
               ) : (
                 <Link 
@@ -168,7 +173,7 @@ export default function CartPage() {
             </div>
             
             <p className="mt-8 text-center text-gray-400 text-[10px] uppercase tracking-[0.2em] italic leading-relaxed px-4">
-              "L'élégance est la seule beauté qui ne se fane jamais."
+              &quot;L&apos;élégance est la seule beauté qui ne se fane jamais.&quot;
             </p>
           </div>
 

@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { connectToDB } from "@/lib/mongoose";
 import { Product } from "@/lib/models/Product";
 import ProductForm from "@/components/ProductForm";
@@ -24,7 +27,7 @@ export default async function EditProductPage({ params }) {
   return (
     <div className="max-w-5xl mx-auto py-10 px-6">
       <Link href="/admin/products" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] mb-10 text-gray-400 hover:text-black transition-all">
-        <ChevronLeft size={16} /> Retour à l'inventaire
+        <ChevronLeft size={16} /> Retour à l&apos;inventaire
       </Link>
 
       <header className="mb-12">

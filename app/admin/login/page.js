@@ -1,4 +1,7 @@
 "use client";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, Eye, EyeOff, Loader2 } from "lucide-react";
@@ -76,7 +79,7 @@ export default function AdminLoginPage() {
         </form>
 
         <p className="mt-12 text-center text-[8px] uppercase tracking-[0.5em] text-white/10 leading-loose">
-          Toute tentative d'accès non autorisée est enregistrée.
+          Toute tentative d&apos;accès non autorisée est enregistrée.
         </p>
       </div>
     </div>

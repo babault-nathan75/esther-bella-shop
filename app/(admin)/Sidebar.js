@@ -1,5 +1,6 @@
 'use client';
-
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -50,7 +51,7 @@ export default function Sidebar({ playfairClass }) {
             EBF
           </h1>
           <p className="text-[10px] uppercase tracking-[0.4em] text-gray-500 mt-2">
-            L'espace privé d'Esther
+            L&apos;espace privé d&apos;Esther
           </p>
         </div>
         

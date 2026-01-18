@@ -1,7 +1,11 @@
 "use client";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Search, MessageCircle, CheckCircle, Clock, MapPin, Hash, Loader2, ImageOff } from "lucide-react";
+import Image from 'next/image'; // Import Image from next/image
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -124,7 +128,7 @@ export default function AdminOrdersPage() {
                       <div key={idx} className="flex items-center gap-4 group/item">
                         <div className="w-12 h-16 bg-gray-200 rounded-lg overflow-hidden shadow-sm flex items-center justify-center">
                           {itemImage ? (
-                            <img src={itemImage} className="w-full h-full object-cover" alt="" />
+                            <Image src={itemImage} className="w-full h-full object-cover" alt="" width={100} height={100} />
                           ) : (
                             <ImageOff size={16} className="text-gray-400" />
                           )}
