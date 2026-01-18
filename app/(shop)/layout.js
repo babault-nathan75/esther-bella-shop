@@ -55,7 +55,6 @@ export default function ShopLayout({ children }) {
 
               {/* Right: Icons - Doré Premium */}
               <div className="flex items-center gap-6 text-yellow-600">
-                <Search size={20} className="cursor-pointer hover:text-white transition-colors" />
                 <Link href="/cart" className="relative group">
                   <ShoppingBag size={22} className="group-hover:scale-110 transition-transform duration-300" />
                   <HeaderCount />

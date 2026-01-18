@@ -4,20 +4,31 @@ import { createContext, useEffect, useState } from "react";
 export const CartContext = createContext({});
 
 export function CartContextProvider({ children }) {
-  const ls = typeof window !== "undefined" ? window.localStorage : null;
-  const [cartProducts, setCartProducts] = useState([]);
-
-  // Charger le panier au démarrage depuis le stockage local (localStorage)
-  useEffect(() => {
+  const [cartProducts, setCartProducts] = useState(() => {
+    const ls = typeof window !== "undefined" ? window.localStorage : null;
     if (ls && ls.getItem('cart')) {
-      setCartProducts(JSON.parse(ls.getItem('cart')));
+      try {
+        return JSON.parse(ls.getItem('cart'));
+      } catch (e) {
+        console.error("Erreur lecture localStorage", e);
+        return [];
+      }
     }
-  }, []);
+    return [];
+  });
 
-  // Sauvegarder dans le localStorage à chaque changement
+  // 2. SAUVEGARDE SYNCHRONISÉE (Correction ici)
   useEffect(() => {
-    if (cartProducts?.length > 0) {
-      ls?.setItem('cart', JSON.stringify(cartProducts));
+    const ls = typeof window !== "undefined" ? window.localStorage : null;
+    if (!ls) return;
+
+    // On sauvegarde TOUJOURS, même si le tableau est vide []
+    // Cela permet d'écraser les anciennes données quand on vide le panier
+    ls.setItem('cart', JSON.stringify(cartProducts));
+    
+    // Si c'est vide, on peut même nettoyer proprement
+    if (cartProducts.length === 0) {
+      ls.removeItem('cart');
     }
   }, [cartProducts]);
 
@@ -26,23 +37,25 @@ export function CartContextProvider({ children }) {
   }
 
   function removeProduct(cartId) {
-    setCartProducts(prev => prev.filter(item => item.cartId !== cartId));
+    setCartProducts(prev => {
+      const newCart = prev.filter(item => item.cartId !== cartId);
+      // Optionnel : on peut forcer le ls ici pour une sécurité maximale
+      return newCart;
+    });
   }
 
   function clearCart() {
     setCartProducts([]);
-    ls?.removeItem('cart');
+    // Le useEffect s'occupera de faire le ls.removeItem('cart')
   }
 
-  // --- NOUVEAU : Vérification de la validité du panier ---
   const isCartValid = () => {
     if (cartProducts.length === 0) return false;
-    // Vérifie si l'un des produits dans le panier a un stock <= 0
     return !cartProducts.some(product => product.stock <= 0);
   };
 
   return (
-    <CartContext.Provider value={{ cartProducts, setCartProducts, addProduct, removeProduct, clearCart, isCartValid  }}>
+    <CartContext.Provider value={{ cartProducts, setCartProducts, addProduct, removeProduct, clearCart, isCartValid }}>
       {children}
     </CartContext.Provider>
   );
