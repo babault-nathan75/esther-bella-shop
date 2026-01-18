@@ -22,7 +22,14 @@ const playfair = Playfair_Display({
 export default function ShopLayout({ children }) {
   return (
     <html lang="fr" className={`scroll-smooth ${montserrat.variable} ${playfair.variable}`}>
-      <body className={`${montserrat.className} bg-white text-ebf-black antialiased`}>
+      {/* AJOUT DE suppressHydrationWarning 
+          Cela empêche l'erreur "Hydration Mismatch" si une extension Chrome 
+          (comme Grammarly ou AdBlock) modifie le HTML au chargement.
+      */}
+      <body 
+        className={`${montserrat.className} bg-white text-ebf-black antialiased`}
+        suppressHydrationWarning={true}
+      >
         <CartContextProvider>
           
           {/* --- HEADER LUXE GOLD & BLACK --- */}

@@ -5,6 +5,37 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
 
+// --- BIBLIOTHÈQUE D'IMAGES PAR DÉFAUT (INTELLIGENTE) ---
+const CATEGORY_DEFAULTS = {
+  dresses: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&w=1000",    // Robes
+  shoes: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?q=80&w=1000",      // Chaussures/Talons
+  bags: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=1000",       // Sacs
+  accessories: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?q=80&w=1000", // Bijoux/Accessoires
+  generic: "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2000"     // Mode Générale
+};
+
+// Fonction pour choisir la bonne image selon le nom de la catégorie
+function getSmartCategoryImage(cat) {
+  // 1. Si une image Cloud existe (AWS S3), on l'utilise
+  if (cat.image && cat.image.startsWith('http')) {
+    return cat.image;
+  }
+
+  // 2. Sinon (Image locale cassée ou vide), on cherche par mot-clé
+  const name = cat.name.toLowerCase();
+  
+  if (name.includes('robe') || name.includes('dress') || name.includes('tenue')) return CATEGORY_DEFAULTS.dresses;
+  if (name.includes('chaussure') || name.includes('talon') || name.includes('shoe')) return CATEGORY_DEFAULTS.shoes;
+  if (name.includes('sac') || name.includes('bag') || name.includes('pochette')) return CATEGORY_DEFAULTS.bags;
+  if (name.includes('accessoire') || name.includes('bijou') || name.includes('montre')) return CATEGORY_DEFAULTS.accessories;
+
+  // 3. Fallback final
+  return CATEGORY_DEFAULTS.generic;
+}
+
+// Fallback pour les produits simples
+const PRODUCT_FALLBACK = "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000"; 
+
 async function getData() {
   await connectToDB();
   const categories = await Category.find();
@@ -22,7 +53,7 @@ export default async function HomePage() {
   return (
     <div className="bg-white min-h-screen font-montserrat overflow-x-hidden">
       
-      {/* --- HERO SECTION : L'ÉCLAT INITIAL (IMAGE OU VIDÉO) --- */}
+      {/* --- HERO SECTION --- */}
       <section className="relative h-[100vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-black/40 z-10"></div>
@@ -83,7 +114,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* --- SECTION CATÉGORIES --- */}
+      {/* --- SECTION CATÉGORIES (INTELLIGENTE) --- */}
       <section className="py-32 bg-gray-50">
         <div className="max-w-[1600px] mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-baseline mb-20">
@@ -93,18 +124,22 @@ export default async function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {categories.map((cat) => {
-              const isVideoCat = cat.image?.match(/\.(mp4|webm|ogg)$/i);
+              // UTILISATION DE LA LOGIQUE INTELLIGENTE ICI
+              const catImage = getSmartCategoryImage(cat);
+              const isVideoCat = catImage.match(/\.(mp4|webm|ogg)$/i);
+
               return (
                 <Link key={cat._id} href={`/category/${cat._id}`} className="group relative h-[700px] overflow-hidden rounded-2xl shadow-2xl bg-zinc-200">
                   {isVideoCat ? (
                     <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110">
-                      <source src={cat.image} type="video/mp4" />
+                      <source src={catImage} type="video/mp4" />
                     </video>
                   ) : (
                     <Image 
-                      src={cat.image || "https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?q=80&w=2070"}
+                      src={catImage}
                       alt={cat.name} 
                       fill 
+                      sizes="(max-width: 768px) 100vw, 33vw"
                       className="object-cover transition-transform duration-[2s] group-hover:scale-110" 
                     />
                   )}
@@ -123,7 +158,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* --- SECTION PRODUITS : LES ICÔNES AVEC SOLD OUT --- */}
+      {/* --- SECTION PRODUITS --- */}
       <section className="py-40 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-32">
@@ -136,7 +171,17 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-24">
             {products.map((product) => {
               const isSoldOut = product.stock <= 0;
-              const productMedia = product.images?.[0];
+              
+              // Fallback produit simple (Si lien local ou inexistant)
+              let productMedia = product.images?.[0];
+              if (!productMedia || (!productMedia.startsWith('http') && !productMedia.startsWith('/'))) {
+                  productMedia = PRODUCT_FALLBACK;
+              }
+              // Pour Vercel: si c'est un lien local /uploads, on force le fallback car le fichier n'existe pas là-bas
+              if (productMedia && productMedia.startsWith('/uploads')) {
+                 productMedia = PRODUCT_FALLBACK;
+              }
+
               const isVideoProd = productMedia?.match(/\.(mp4|webm|ogg)$/i);
 
               return (
@@ -145,7 +190,7 @@ export default async function HomePage() {
                   key={product._id} 
                   className={`group relative ${isSoldOut ? 'cursor-default' : ''}`}
                 >
-                  <div className="relative aspect-[3/4] overflow-hidden mb-8 rounded-sm bg-gray-100">
+                  <div className="relative aspect-[3/4] overflow-hidden mb-8 rounded-sm bg-gray-100 shadow-sm">
                     {productMedia && (
                       isVideoProd ? (
                         <video autoPlay muted loop playsInline className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ${isSoldOut ? 'grayscale opacity-50' : 'group-hover:scale-105'}`}>
@@ -156,6 +201,7 @@ export default async function HomePage() {
                           src={productMedia} 
                           alt={product.title}
                           fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                           className={`object-cover transition-transform duration-1000 
                             ${isSoldOut ? 'grayscale opacity-50' : 'group-hover:scale-105'}`}
                         />
@@ -183,10 +229,10 @@ export default async function HomePage() {
 
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                       <div className={`h-[1px] w-4 ${isSoldOut ? 'bg-gray-300' : 'bg-yellow-600'}`}></div>
-                       <p className={`text-[9px] font-black uppercase tracking-[0.3em] ${isSoldOut ? 'text-gray-400' : 'text-yellow-600'}`}>
-                        {isSoldOut ? 'Épuisé' : 'Prestige'}
-                       </p>
+                        <div className={`h-[1px] w-4 ${isSoldOut ? 'bg-gray-300' : 'bg-yellow-600'}`}></div>
+                        <p className={`text-[9px] font-black uppercase tracking-[0.3em] ${isSoldOut ? 'text-gray-400' : 'text-yellow-600'}`}>
+                         {isSoldOut ? 'Épuisé' : 'Prestige'}
+                        </p>
                     </div>
                     <h3 className={`text-sm font-bold tracking-widest uppercase transition-colors 
                       ${isSoldOut ? 'text-gray-300' : 'text-black group-hover:text-yellow-600'}`}>

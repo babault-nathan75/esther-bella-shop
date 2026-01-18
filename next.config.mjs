@@ -2,13 +2,20 @@
 const nextConfig = {
   images: {
     remotePatterns: [
+      // 1. Pour vos produits (Stockés sur AWS S3)
       {
         protocol: 'https',
-        hostname: '*.amazonaws.com', // ✅ Autorise tous les buckets AWS S3
+        hostname: '*.amazonaws.com',
       },
+      // 2. Pour les images de design (Unsplash) - C'est ce qui bloquait !
       {
         protocol: 'https',
-        hostname: 'lh3.googleusercontent.com', // (Optionnel) Pour les photos de profil Google
+        hostname: 'images.unsplash.com',
+      },
+      // 3. (Optionnel) Pour les avatars Google Auth
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
       },
     ],
   },
