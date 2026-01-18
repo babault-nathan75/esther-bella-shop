@@ -4,21 +4,16 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { Save, ArrowLeft, Link as LinkIcon, FolderUp, Eye, Image as ImageIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image"; // Import the Image component
+import Image from "next/image";
 
 export default function NewProductPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  
-  // --- ÉTAT DU STOCK (Ajouté) ---
   const [stock, setStock] = useState(0);
-
-  // --- GESTION DES TAILLES ---
   const [sizes, setSizes] = useState([]); 
   const availableSizes = ["XS", "S", "M", "L", "XL", "XXL", "3XL"]; 
 
-  // États pour gérer le média
   const [media, setMedia] = useState(""); 
   const [mediaTypeInput, setMediaTypeInput] = useState("url"); 
   const [isUploading, setIsUploading] = useState(false); 
@@ -29,6 +24,7 @@ export default function NewProductPage() {
   const router = useRouter(); 
 
   useEffect(() => {
+    // La récupération des catégories reste dynamique car elle est faite côté client au montage
     axios.get("/api/categories").then(res => {
       setCategories(res.data);
     });
@@ -53,7 +49,6 @@ export default function NewProductPage() {
     if (files?.length > 0) {
       setIsUploading(true); 
       const file = files[0];
-      
       const formData = new FormData();
       formData.append('file', file);
 
@@ -75,7 +70,7 @@ export default function NewProductPage() {
       title, 
       description, 
       price: Number(price), 
-      stock: Number(stock), // --- STOCK AJOUTÉ ICI ---
+      stock: Number(stock),
       images: [media], 
       category,
       sizes 
@@ -228,7 +223,7 @@ export default function NewProductPage() {
                   {isVideo(media) ? (
                     <video src={media} controls className="max-h-60 rounded-xl" />
                   ) : (
-                    <Image src={media} alt="Aperçu" className="max-h-60 object-contain rounded-xl" width={500} height={500} />
+                    <Image src={media} alt="Aperçu" className="max-h-60 object-contain rounded-xl" width={500} height={500} unoptimized />
                   )}
                 </div>
              </div>
