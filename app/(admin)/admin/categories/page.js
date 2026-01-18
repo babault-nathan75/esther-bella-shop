@@ -1,7 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { Trash2, Plus, LayoutGrid, Loader2 } from "lucide-react";

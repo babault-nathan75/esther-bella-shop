@@ -1,7 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 import { useContext } from "react";
 import { CartContext } from "@/context/CartContext";
 import { Trash2, ArrowRight, ShoppingBag, ChevronLeft, AlertCircle } from "lucide-react";

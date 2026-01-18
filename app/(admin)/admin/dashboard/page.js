@@ -1,7 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { ShoppingBag, Users, BarChart3, Package, ArrowUpRight } from "lucide-react";
