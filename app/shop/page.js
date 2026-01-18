@@ -7,8 +7,9 @@ import { Category } from "@/lib/models/Category";
 import ShopClient from "@/components/ShopClient";
 import ShopHeader from "@/components/ShopHeader";
 import ScrollProgress from "@/components/ScrollProgress";
-import { MapPin, ShieldCheck, ArrowLeft } from "lucide-react";
-import { Instagram as SimpleInstagram } from "simple-icons-react"; // Import Simple Icons
+// ✅ CORRECTION : Ajout de 'Instagram' ici (Lucide est déjà installé)
+import { MapPin, ShieldCheck, ArrowLeft, Instagram } from "lucide-react";
+// ❌ SUPPRESSION de la ligne 'simple-icons-react' qui faisait planter le site
 import Link from "next/link";
 
 // Métadonnées pour le SEO - Fonctionne car c'est un Server Component
@@ -95,7 +96,8 @@ export default async function ShopPage() {
                   <span className="text-[10px] font-bold uppercase tracking-widest text-gray-300 group-hover:text-white transition-colors">Showroom Abidjan, CI</span>
                 </li>
                 <li className="flex items-center gap-4 group cursor-default">
-                  <SimpleInstagram size={16} className="text-yellow-600" />
+                  {/* Correction ici aussi : Utilisation de Instagram au lieu de SimpleInstagram */}
+                  <Instagram size={16} className="text-yellow-600" />
                   <span className="text-[10px] font-bold uppercase tracking-widest text-gray-300 group-hover:text-white transition-colors">@estherbellafashion</span>
                 </li>
               </ul>
