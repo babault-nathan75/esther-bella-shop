@@ -1,6 +1,13 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+// AJOUT DE LA VÉRIFICATION GOOGLE ICI
+export const metadata = {
+  verification: {
+    google: "google68e8f6a4daa6f8f5",
+  },
+};
+
 import { connectToDB } from "@/lib/mongoose";
 import { Product } from "@/lib/models/Product";
 import { Category } from "@/lib/models/Category";
@@ -19,12 +26,10 @@ const CATEGORY_DEFAULTS = {
 
 // Fonction pour choisir la bonne image selon le nom de la catégorie
 function getSmartCategoryImage(cat) {
-  // 1. Si une image Cloud existe (AWS S3), on l'utilise
   if (cat.image && cat.image.startsWith('http')) {
     return cat.image;
   }
 
-  // 2. Sinon (Image locale cassée ou vide), on cherche par mot-clé
   const name = cat.name.toLowerCase();
   
   if (name.includes('robe') || name.includes('dress') || name.includes('tenue')) return CATEGORY_DEFAULTS.dresses;
@@ -32,11 +37,9 @@ function getSmartCategoryImage(cat) {
   if (name.includes('sac') || name.includes('bag') || name.includes('pochette')) return CATEGORY_DEFAULTS.bags;
   if (name.includes('accessoire') || name.includes('bijou') || name.includes('montre')) return CATEGORY_DEFAULTS.accessories;
 
-  // 3. Fallback final
   return CATEGORY_DEFAULTS.generic;
 }
 
-// Fallback pour les produits simples
 const PRODUCT_FALLBACK = "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000"; 
 
 async function getData() {
@@ -49,7 +52,6 @@ async function getData() {
 export default async function HomePage() {
   const { categories, products } = await getData();
 
-  // URL du média Hero
   const heroMediaUrl = "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070";
   const isHeroVideo = heroMediaUrl.match(/\.(mp4|webm|ogg)$/i);
 
@@ -117,7 +119,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* --- SECTION CATÉGORIES (INTELLIGENTE) --- */}
+      {/* --- SECTION CATÉGORIES --- */}
       <section className="py-32 bg-gray-50">
         <div className="max-w-[1600px] mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-baseline mb-20">
@@ -127,7 +129,6 @@ export default async function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {categories.map((cat) => {
-              // UTILISATION DE LA LOGIQUE INTELLIGENTE ICI
               const catImage = getSmartCategoryImage(cat);
               const isVideoCat = catImage.match(/\.(mp4|webm|ogg)$/i);
 
@@ -174,13 +175,10 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-24">
             {products.map((product) => {
               const isSoldOut = product.stock <= 0;
-              
-              // Fallback produit simple (Si lien local ou inexistant)
               let productMedia = product.images?.[0];
               if (!productMedia || (!productMedia.startsWith('http') && !productMedia.startsWith('/'))) {
                   productMedia = PRODUCT_FALLBACK;
               }
-              // Pour Vercel: si c'est un lien local /uploads, on force le fallback car le fichier n'existe pas là-bas
               if (productMedia && productMedia.startsWith('/uploads')) {
                  productMedia = PRODUCT_FALLBACK;
               }
