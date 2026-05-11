@@ -44,8 +44,22 @@ const PRODUCT_FALLBACK = "https://images.unsplash.com/photo-1515886657613-9f3515
 
 async function getData() {
   await connectToDB();
+
   const categories = await Category.find();
-  const products = await Product.find({}, null, { sort: { '_id': -1 }, limit: 8 });
+
+  const rawProducts = await Product.find({}, null, {
+    sort: { _id: -1 },
+  });
+
+  const products = Array.from(
+    new Map(
+      rawProducts.map((p) => [
+        p.title?.trim().toLowerCase(),
+        p,
+      ])
+    ).values()
+  ).slice(0, 8);
+
   return { categories, products };
 }
 
