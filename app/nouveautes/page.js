@@ -44,11 +44,11 @@ export default async function NouveautesPage() {
         {/* Grille de Prestige */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-16 gap-y-32">
           {products.map((product) => {
-            const isSoldOut = product.stock <= 0;
+            const isSoldOut = product.available === false;
             const mainMedia = product.images?.[0];
-            
+
             // --- LOGIQUE DE DÉTECTION AUTOMATIQUE ---
-            const isVideo = mainMedia?.match(/\.(mp4|webm|ogg)$/i);
+            const isVideo = mainMedia?.match(/\.(mp4|webm|ogg|mov)$/i);
             
             return (
               <Link 
@@ -62,15 +62,14 @@ export default async function NouveautesPage() {
                     isVideo ? (
                       /* LOGIQUE VIDÉO */
                       <video
+                        src={mainMedia}
                         autoPlay
                         muted
                         loop
                         playsInline
-                        className={`absolute inset-0 w-full h-full object-cover transition-transform duration-[2s] 
+                        className={`absolute inset-0 w-full h-full object-cover transition-transform duration-[2s]
                           ${isSoldOut ? 'grayscale opacity-40' : 'group-hover:scale-110'}`}
-                      >
-                        <source src={mainMedia} type="video/mp4" />
-                      </video>
+                      />
                     ) : (
                       /* LOGIQUE IMAGE */
                       <Image 

@@ -29,13 +29,24 @@ export default async function CategoryPage({ params }) {
       {/* --- HERO ÉDITORIAL --- */}
       <div className="relative h-[60vh] flex items-center justify-center overflow-hidden bg-black">
         {category.image && (
-          <Image 
-            src={category.image} 
-            alt={category.name}
-            fill
-            className="absolute inset-0 object-cover opacity-60 grayscale-[20%] scale-105 animate-slow-zoom"
-            priority
-          />
+          /\.(mp4|webm|ogg|mov)$/i.test(category.image) ? (
+            <video
+              src={category.image}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover opacity-60 scale-105"
+            />
+          ) : (
+            <Image
+              src={category.image}
+              alt={category.name}
+              fill
+              className="absolute inset-0 object-cover opacity-60 grayscale-[20%] scale-105 animate-slow-zoom"
+              priority
+            />
+          )
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
         

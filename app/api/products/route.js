@@ -19,9 +19,10 @@ export async function POST(req) {
   try {
     await connectToDB();
     const data = await req.json();
+    const { stock, ...payload } = data;
     const productDoc = await Product.create({
-      ...data,
-      stock: Number(data.stock) || 0
+      ...payload,
+      available: payload.available !== undefined ? Boolean(payload.available) : true,
     });
     return NextResponse.json(productDoc);
   } catch (error) {
@@ -32,16 +33,32 @@ export async function POST(req) {
 export async function PUT(req) {
   try {
     await connectToDB();
-    const { _id, ...data } = await req.json();
-    
+    const { _id, stock, ...data } = await req.json();
+
     if (!_id) {
       return NextResponse.json({ error: "ID manquant pour la mise à jour" }, { status: 400 });
     }
 
     await Product.updateOne({ _id }, {
       ...data,
-      stock: Number(data.stock) || 0
+      ...(data.available !== undefined ? { available: Boolean(data.available) } : {}),
     });
+    return NextResponse.json(true);
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(req) {
+  try {
+    await connectToDB();
+    const { _id, available } = await req.json();
+
+    if (!_id) {
+      return NextResponse.json({ error: "ID manquant" }, { status: 400 });
+    }
+
+    await Product.updateOne({ _id }, { available: Boolean(available) });
     return NextResponse.json(true);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -51,8 +68,7 @@ export async function PUT(req) {
 export async function DELETE(req) {
   try {
     await connectToDB();
-    
-    // CORRECTION : Extraction sécurisée de l'ID depuis l'URL
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 

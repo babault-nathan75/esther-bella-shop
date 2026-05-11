@@ -10,9 +10,8 @@ export default function ProductClient({ product }) {
   const [activeImage, setActiveImage] = useState(0);
   const [isAdded, setIsAdded] = useState(false);
   
-  // LOGIQUE DE STOCK
-  const isSoldOut = product.stock <= 0;
-  const isLowStock = product.stock > 0 && product.stock <= 3;
+  // LOGIQUE DE DISPONIBILITÉ
+  const isSoldOut = product.available === false;
 
   const isVideo = (filename) => filename && filename.match(/\.(mp4|webm|ogg|mov)$/i);
   const images = product.images || [];
@@ -114,11 +113,7 @@ export default function ProductClient({ product }) {
                 </span>
                 
                 {isSoldOut ? (
-                  <span className="text-[10px] bg-gray-100 text-gray-400 px-4 py-2 rounded-full font-black uppercase tracking-widest">Épuisé</span>
-                ) : isLowStock ? (
-                  <span className="text-[10px] bg-red-50 text-red-600 px-4 py-2 rounded-full font-black uppercase tracking-widest animate-pulse">
-                    Plus que {product.stock} pièces
-                  </span>
+                  <span className="text-[10px] bg-gray-100 text-gray-400 px-4 py-2 rounded-full font-black uppercase tracking-widest">Rupture de stock</span>
                 ) : (
                   <span className="text-[10px] text-green-600 uppercase tracking-widest font-bold">Disponible</span>
                 )}

@@ -10,21 +10,19 @@ export default function NewProductPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
-  const [stock, setStock] = useState(0);
-  const [sizes, setSizes] = useState([]); 
-  const availableSizes = ["XS", "S", "M", "L", "XL", "XXL", "3XL"]; 
+  const [sizes, setSizes] = useState([]);
+  const availableSizes = ["XS", "S", "M", "L", "XL", "XXL", "Toutes les tailles"];
 
-  const [media, setMedia] = useState(""); 
-  const [mediaTypeInput, setMediaTypeInput] = useState("url"); 
-  const [isUploading, setIsUploading] = useState(false); 
+  const [media, setMedia] = useState("");
+  const [mediaTypeInput, setMediaTypeInput] = useState("url");
+  const [isUploading, setIsUploading] = useState(false);
 
   const [category, setCategory] = useState("");
   const [categories, setCategories] = useState([]);
-  
-  const router = useRouter(); 
+
+  const router = useRouter();
 
   useEffect(() => {
-    // La récupération des catégories reste dynamique car elle est faite côté client au montage
     axios.get("/api/categories").then(res => {
       setCategories(res.data);
     });
@@ -47,35 +45,35 @@ export default function NewProductPage() {
   const handleFileChange = async (ev) => {
     const files = ev.target.files;
     if (files?.length > 0) {
-      setIsUploading(true); 
+      setIsUploading(true);
       const file = files[0];
       const formData = new FormData();
       formData.append('file', file);
 
       try {
         const res = await axios.post('/api/upload', formData);
-        setMedia(res.data.url); 
+        setMedia(res.data.url);
       } catch (err) {
         console.error("Erreur upload", err);
         alert("Erreur lors de l'envoi du fichier.");
       } finally {
-        setIsUploading(false); 
+        setIsUploading(false);
       }
     }
   };
 
   async function createProduct(ev) {
     ev.preventDefault();
-    const data = { 
-      title, 
-      description, 
-      price: Number(price), 
-      stock: Number(stock),
-      images: [media], 
+    const data = {
+      title,
+      description,
+      price: Number(price),
+      images: media ? [media] : [],
       category,
-      sizes 
+      sizes,
+      available: true,
     };
-    
+
     try {
       await axios.post("/api/products", data);
       router.push("/admin/products");
@@ -94,14 +92,14 @@ export default function NewProductPage() {
         <h1 className="text-3xl font-black text-black uppercase tracking-tighter">Nouveau Produit</h1>
         <div className="h-1 w-20 bg-yellow-600 rounded-full"></div>
       </div>
-      
+
       <form onSubmit={createProduct} className="bg-white p-8 rounded-[2rem] shadow-xl border border-gray-100 flex flex-col gap-8">
-        
+
         {/* Titre */}
         <div>
           <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Nom de la pièce</label>
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Ex: Robe de Soirée Gold"
             className="w-full bg-gray-50 border-none rounded-xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-yellow-600/20 transition-all"
             value={title} onChange={ev => setTitle(ev.target.value)}
@@ -109,11 +107,11 @@ export default function NewProductPage() {
           />
         </div>
 
-        {/* Catégorie, Prix et Stock */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Catégorie et Prix */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Catégorie</label>
-              <select 
+              <select
                 className="w-full bg-gray-50 border-none rounded-xl p-4 text-xs font-bold outline-none focus:ring-2 focus:ring-yellow-600/20 transition-all"
                 value={category} onChange={ev => setCategory(ev.target.value)}
                 required
@@ -124,27 +122,15 @@ export default function NewProductPage() {
                 ))}
               </select>
             </div>
-            
+
             <div>
                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Prix (FCFA)</label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   placeholder="15000"
                   className="w-full bg-gray-50 border-none rounded-xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-yellow-600/20 transition-all"
                   value={price} onChange={ev => setPrice(ev.target.value)}
                   required
-                />
-            </div>
-
-            <div>
-                <label className="block text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-3">Quantité Stock</label>
-                <input 
-                  type="number" 
-                  value={stock} 
-                  onChange={e => setStock(e.target.value)} 
-                  required 
-                  placeholder="10" 
-                  className="w-full bg-yellow-600/5 border border-yellow-600/10 rounded-xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-yellow-600/20" 
                 />
             </div>
         </div>
@@ -159,9 +145,9 @@ export default function NewProductPage() {
                 type="button"
                 onClick={() => handleSizeToggle(size)}
                 className={`
-                  w-12 h-12 rounded-full border-2 font-black text-xs flex items-center justify-center transition-all
-                  ${sizes.includes(size) 
-                    ? 'bg-black border-black text-yellow-600 shadow-lg scale-110' 
+                  px-4 h-12 rounded-full border-2 font-black text-xs flex items-center justify-center transition-all
+                  ${sizes.includes(size)
+                    ? 'bg-black border-black text-yellow-600 shadow-lg scale-105'
                     : 'bg-white border-gray-100 text-gray-400 hover:border-yellow-600 hover:text-yellow-600'}
                 `}
               >
@@ -174,17 +160,17 @@ export default function NewProductPage() {
         {/* MÉDIA */}
         <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
            <label className="block text-[10px] font-black text-black uppercase tracking-widest mb-6">Visuel (Image ou Vidéo)</label>
-           
+
            <div className="flex gap-4 mb-6">
-             <button 
-               type="button" 
+             <button
+               type="button"
                onClick={() => setMediaTypeInput("url")}
                className={`flex-1 flex items-center justify-center gap-2 py-4 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${mediaTypeInput === 'url' ? 'bg-black text-yellow-600 shadow-lg' : 'bg-white text-gray-400 border border-gray-100'}`}
              >
                <LinkIcon size={16} /> Lien Web
              </button>
-             <button 
-               type="button" 
+             <button
+               type="button"
                onClick={() => setMediaTypeInput("local")}
                className={`flex-1 flex items-center justify-center gap-2 py-4 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${mediaTypeInput === 'local' ? 'bg-black text-yellow-600 shadow-lg' : 'bg-white text-gray-400 border border-gray-100'}`}
              >
@@ -193,11 +179,11 @@ export default function NewProductPage() {
            </div>
 
            {mediaTypeInput === "url" ? (
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="https://..."
                 className="w-full bg-white border border-gray-100 rounded-xl p-4 text-xs font-bold outline-none focus:ring-2 focus:ring-yellow-600/20"
-                value={media} 
+                value={media}
                 onChange={ev => setMedia(ev.target.value)}
               />
            ) : (
@@ -230,22 +216,24 @@ export default function NewProductPage() {
            )}
         </div>
 
-        {/* Description */}
+        {/* Description (facultative) */}
         <div>
-          <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">L&apos;Éditorial (Description)</label>
-          <textarea 
-            placeholder="Détails du produit..."
+          <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
+            L&apos;Éditorial (Description) <span className="text-gray-300 normal-case tracking-normal">— facultatif</span>
+          </label>
+          <textarea
+            placeholder="Détails du produit (optionnel)..."
             className="w-full bg-gray-50 border-none rounded-[2rem] p-6 text-sm font-medium h-32 focus:ring-2 focus:ring-yellow-600/20 transition-all outline-none resize-none"
             value={description} onChange={ev => setDescription(ev.target.value)}
           />
         </div>
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={isUploading}
           className="bg-black text-yellow-600 font-black py-5 rounded-2xl hover:bg-yellow-600 hover:text-black shadow-2xl transition-all flex justify-center items-center gap-4 text-xs tracking-[0.3em] uppercase disabled:opacity-50"
         >
-          {isUploading ? <Loader2 className="animate-spin" /> : <Save size={20} />} 
+          {isUploading ? <Loader2 className="animate-spin" /> : <Save size={20} />}
           {isUploading ? "Veuillez patienter..." : "Publier la pièce"}
         </button>
 

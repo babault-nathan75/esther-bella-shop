@@ -118,14 +118,18 @@ export default function AdminOrdersPage() {
                 <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.4em] mb-6">Articles commandés</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {order.cartProducts?.map((item, idx) => {
-                    // On vérifie plusieurs sources possibles pour l'image
                     const itemImage = item.images?.[0] || item.image || item.thumbnail;
-                    
+                    const itemIsVideo = itemImage && /\.(mp4|webm|ogg|mov)$/i.test(itemImage);
+
                     return (
                       <div key={idx} className="flex items-center gap-4 group/item">
                         <div className="w-12 h-16 bg-gray-200 rounded-lg overflow-hidden shadow-sm flex items-center justify-center">
                           {itemImage ? (
-                            <Image src={itemImage} className="w-full h-full object-cover" alt="" width={100} height={100} />
+                            itemIsVideo ? (
+                              <video src={itemImage} muted playsInline className="w-full h-full object-cover" />
+                            ) : (
+                              <Image src={itemImage} className="w-full h-full object-cover" alt="" width={100} height={100} />
+                            )
                           ) : (
                             <ImageOff size={16} className="text-gray-400" />
                           )}

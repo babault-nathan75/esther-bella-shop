@@ -51,7 +51,7 @@ export function CartContextProvider({ children }) {
 
   const isCartValid = () => {
     if (cartProducts.length === 0) return false;
-    return !cartProducts.some(product => product.stock <= 0);
+    return !cartProducts.some(product => product.available === false);
   };
 
   return (

@@ -10,7 +10,7 @@ export default function CartPage() {
 
   // --- LOGIQUE DE VÉRIFICATION DES STOCKS ---
   // Cette variable devient 'true' si au moins un article a un stock de 0 ou moins
-  const hasOutOfStockItems = cartProducts.some(item => item.stock <= 0);
+  const hasOutOfStockItems = cartProducts.some(item => item.available === false);
   
   // Calcul du total
   const subtotal = cartProducts.reduce((acc, item) => acc + (item.price || 0), 0);
@@ -69,19 +69,32 @@ export default function CartPage() {
             )}
 
             {cartProducts.map((item) => {
-              const isSoldOut = item.stock <= 0;
+              const isSoldOut = item.available === false;
+              const media = item.images?.[0];
+              const isVideo = media && /\.(mp4|webm|ogg|mov)$/i.test(media);
               return (
                 <div key={item.cartId} className={`flex gap-6 md:gap-10 group relative pb-10 border-b border-gray-50 transition-opacity duration-500 ${isSoldOut ? 'opacity-50' : ''}`}>
-                  
-                  {/* Miniature Image */}
+
+                  {/* Miniature */}
                   <div className="relative w-24 h-32 md:w-32 md:h-44 bg-gray-100 overflow-hidden rounded-sm shadow-md flex-shrink-0">
-                    <Image 
-                      src={item.images?.[0]} 
-                      alt={item.title} 
-                      className={`w-full h-full object-cover transition-transform duration-700 ${!isSoldOut && 'group-hover:scale-110'} ${isSoldOut ? 'grayscale' : ''}`} 
-                      width={500} // specify appropriate width
-                      height={500} // specify appropriate height
-                    />
+                    {media && (isVideo ? (
+                      <video
+                        src={media}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        className={`w-full h-full object-cover transition-transform duration-700 ${!isSoldOut && 'group-hover:scale-110'} ${isSoldOut ? 'grayscale' : ''}`}
+                      />
+                    ) : (
+                      <Image
+                        src={media}
+                        alt={item.title}
+                        className={`w-full h-full object-cover transition-transform duration-700 ${!isSoldOut && 'group-hover:scale-110'} ${isSoldOut ? 'grayscale' : ''}`}
+                        width={500}
+                        height={500}
+                      />
+                    ))}
                     {isSoldOut && (
                       <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[1px]">
                         <span className="text-[8px] font-black text-white uppercase tracking-[0.3em] border border-white/20 px-2 py-1 transform -rotate-2">
@@ -139,8 +152,8 @@ export default function CartPage() {
                   <span>Sous-total</span>
                   <span className="text-white font-bold">{subtotal.toLocaleString()} FCFA</span>
                 </div>
-                <div className="flex justify-between text-sm uppercase tracking-widest text-white/60">
-                  <span>Livraison</span>
+                <div className="flex justify-between text-sm tracking-widest text-white/60">
+                  <span>Livraison a Abidjan</span>
                   <span className="text-white font-bold">{shipping.toLocaleString()} FCFA</span>
                 </div>
                 <div className="h-px bg-white/10 my-6"></div>
@@ -160,7 +173,7 @@ export default function CartPage() {
                   href="/checkout" 
                   className="w-full bg-yellow-600 text-black h-16 rounded-full font-black uppercase text-xs tracking-[0.3em] flex items-center justify-center gap-3 hover:bg-white hover:scale-[1.02] transition-all shadow-xl"
                 >
-                  Passer au paiement <ArrowRight size={18} />
+                  Finaliser la commande <ArrowRight size={18} />
                 </Link>
               )}
 

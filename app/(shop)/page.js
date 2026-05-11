@@ -174,16 +174,13 @@ export default async function HomePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-24">
             {products.map((product) => {
-              const isSoldOut = product.stock <= 0;
+              const isSoldOut = product.available === false;
               let productMedia = product.images?.[0];
               if (!productMedia || (!productMedia.startsWith('http') && !productMedia.startsWith('/'))) {
                   productMedia = PRODUCT_FALLBACK;
               }
-              if (productMedia && productMedia.startsWith('/uploads')) {
-                 productMedia = PRODUCT_FALLBACK;
-              }
 
-              const isVideoProd = productMedia?.match(/\.(mp4|webm|ogg)$/i);
+              const isVideoProd = productMedia?.match(/\.(mp4|webm|ogg|mov)$/i);
 
               return (
                 <Link 
@@ -194,9 +191,7 @@ export default async function HomePage() {
                   <div className="relative aspect-[3/4] overflow-hidden mb-8 rounded-sm bg-gray-100 shadow-sm">
                     {productMedia && (
                       isVideoProd ? (
-                        <video autoPlay muted loop playsInline className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ${isSoldOut ? 'grayscale opacity-50' : 'group-hover:scale-105'}`}>
-                          <source src={productMedia} type="video/mp4" />
-                        </video>
+                        <video src={productMedia} autoPlay muted loop playsInline className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ${isSoldOut ? 'grayscale opacity-50' : 'group-hover:scale-105'}`} />
                       ) : (
                         <Image
                           src={productMedia} 

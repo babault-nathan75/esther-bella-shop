@@ -75,10 +75,10 @@ export default function ShopClient({ initialProducts, categories }) {
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-20"
           >
             {filteredProducts.map((product) => {
-              const isSoldOut = product.stock <= 0;
+              const isSoldOut = product.available === false;
               const mainMedia = product.images?.[0];
               // LOGIQUE DE DÉTECTION AUTOMATIQUE
-              const isVideo = mainMedia?.match(/\.(mp4|webm|ogg)$/i);
+              const isVideo = mainMedia?.match(/\.(mp4|webm|ogg|mov)$/i);
 
               return (
                 <motion.div key={product._id} variants={itemVariants}>

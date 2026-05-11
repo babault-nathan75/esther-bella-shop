@@ -22,31 +22,30 @@ export async function POST(req) {
       );
     }
 
-    // --- 2. VÉRIFICATION DU STOCK AVANT VALIDATION ---
+    // --- 2. VÉRIFICATION DE LA DISPONIBILITÉ AVANT VALIDATION ---
     for (const item of cartProducts) {
-      // SÉCURITÉ : Vérifier si l'ID est valide pour MongoDB avant de chercher
       if (!item._id || !mongoose.Types.ObjectId.isValid(item._id)) {
         return NextResponse.json(
-          { error: `Identifiant de produit invalide : ${item.title || 'Inconnu'}` }, 
+          { error: `Identifiant de produit invalide : ${item.title || 'Inconnu'}` },
           { status: 400 }
         );
       }
 
       const dbProduct = await Product.findById(item._id);
-      
+
       if (!dbProduct) {
         return NextResponse.json(
-          { error: `La pièce "${item.title}" n'existe plus dans notre catalogue.` }, 
+          { error: `La pièce "${item.title}" n'existe plus dans notre catalogue.` },
           { status: 400 }
         );
       }
 
-      if (dbProduct.stock <= 0) {
+      if (dbProduct.available === false) {
         return NextResponse.json(
-          { 
-            error: `Indisponible : La pièce "${dbProduct.title}" vient d'être épuisée à l'instant.`,
-            outOfStock: true 
-          }, 
+          {
+            error: `Indisponible : La pièce "${dbProduct.title}" est en rupture de stock.`,
+            outOfStock: true
+          },
           { status: 400 }
         );
       }
@@ -79,15 +78,7 @@ export async function POST(req) {
       status: 'En attente',
     });
 
-    // --- 5. MISE À JOUR DES STOCKS ---
-    // On ne décrémente que si la commande a été créée avec succès ci-dessus
-    for (const item of cartProducts) {
-      await Product.findByIdAndUpdate(item._id, {
-        $inc: { stock: -1 } 
-      });
-    }
-
-    // --- 6. RÉPONSE DE SUCCÈS ---
+    // --- 5. RÉPONSE DE SUCCÈS ---
     return NextResponse.json({ 
       id: orderDoc._id,
       message: "L'empire Esther Bella vous remercie pour votre confiance."

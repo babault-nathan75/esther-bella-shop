@@ -19,8 +19,10 @@ export default function CheckoutPage() {
   const WHATSAPP_NUMBER = "22587335847"; 
 
   const subtotal = cartProducts.reduce((acc, item) => acc + (item.price || 0), 0);
-  const shippingCost = city === "Autre" ? 2000 : 1500; 
+  const isCustomShipping = city === "Autre";
+  const shippingCost = isCustomShipping ? 0 : 1500;
   const total = subtotal + shippingCost;
+  const shippingLabel = isCustomShipping ? "À confirmer" : `${shippingCost.toLocaleString()} FCFA`;
 
   const handleCheckout = async (e) => {
     e.preventDefault();
@@ -48,26 +50,34 @@ export default function CheckoutPage() {
 
       // 1. Enregistrement de la commande avec forçage du type Number pour le total
       const response = await axios.post('/api/checkout', {
-        name, 
-        phone, 
-        city: finalCity, 
-        address, 
+        name,
+        phone,
+        city: finalCity,
+        address,
         cartProducts: cleanedProducts,
-        total: Number(total), // S'assure que c'est un nombre pour MongoDB
-        shippingCost: Number(shippingCost)
+        total: Number(total),
+        shippingCost,
+        shippingPending: isCustomShipping,
       });
 
       const newOrderId = response.data.id || response.data._id;
       setOrderId(newOrderId);
 
       // 2. Préparation du message WhatsApp (Seulement si l'API a validé)
+      const shippingLine = isCustomShipping
+        ? `Livraison : à confirmer (hors-zone Abidjan)`
+        : `Livraison : ${shippingCost.toLocaleString()} FCFA`;
+
+      const totalLine = isCustomShipping
+        ? `*TOTAL PRODUITS : ${subtotal.toLocaleString()} FCFA* (Montant de la livraison à confirmer)`
+        : `*TOTAL : ${total.toLocaleString()} FCFA*\n*(Produits: ${subtotal.toLocaleString()} | ${shippingLine})*`;
+
       const message = `Bonjour Esther Bella Fashion ✨\n\n` +
         `Nouvelle commande de *${name}*\n` +
         `Commande N°: #${newOrderId.substring(0, 8)}\n\n` +
         `*DÉTAILS :*\n` +
         cartProducts.map(p => `- ${p.title} (${p.selectedSize || 'Unique'})`).join('\n') +
-        `\n\n*TOTAL : ${total.toLocaleString()} FCFA*\n` +
-        `*(Produits: ${subtotal.toLocaleString()} | Livraison: ${shippingCost.toLocaleString()} FCFA)*\n\n` +
+        `\n\n${totalLine}\n\n` +
         `*LIVRAISON :* ${finalCity}, ${address}\n` +
         `*CONTACT :* ${phone}\n\n` +
         `Merci de confirmer la commande. 👸👑`;
@@ -90,6 +100,18 @@ export default function CheckoutPage() {
       setIsProcessing(false);
     }
   };
+
+  if (cartProducts.length === 0 && !orderId) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center px-6 font-montserrat text-center">
+        <h2 className="text-3xl font-serif italic text-black mb-4">Votre panier est vide</h2>
+        <p className="text-gray-400 text-[10px] uppercase tracking-[0.3em] mb-10">Ajoutez une pièce avant de finaliser</p>
+        <Link href="/shop" className="bg-black text-white px-12 py-4 rounded-full font-black uppercase text-xs tracking-[0.3em] hover:bg-yellow-600 hover:text-black transition-all shadow-2xl">
+          Découvrir la Collection
+        </Link>
+      </div>
+    );
+  }
 
   if (orderId) {
     return (
@@ -170,15 +192,10 @@ export default function CheckoutPage() {
                 >
                   <option value="Abobo">Abobo</option>
                   <option value="Adjamé">Adjamé</option>
-                  <option value="Anyama">Anyama</option>
-                  <option value="Attécoubé">Attécoubé</option>
-                  <option value="Bingerville">Bingerville</option>
                   <option value="Cocody">Cocody</option>
                   <option value="Koumassi">Koumassi</option>
                   <option value="Marcory">Marcory</option>
                   <option value="Plateau">Plateau</option>
-                  <option value="Port-Bouët">Port-Bouët</option>
-                  <option value="Songon">Songon</option>
                   <option value="Treichville">Treichville</option>
                   <option value="Yopougon">Yopougon</option>
                   <option value="Autre">Autre (Précisez...)</option>
@@ -190,7 +207,7 @@ export default function CheckoutPage() {
                       type="text" placeholder="NOM DE VOTRE VILLE" value={customCity} onChange={e => setCustomCity(e.target.value)}
                       className="w-full bg-yellow-600/5 border border-yellow-600/20 rounded-xl p-4 text-xs font-bold tracking-widest outline-none focus:ring-2 focus:ring-yellow-600/40"
                     />
-                    <p className="text-[9px] text-yellow-600 mt-2 uppercase tracking-widest font-bold">* Tarif hors-zone : 2.000 FCFA</p>
+                    <p className="text-[9px] text-yellow-600 mt-2 uppercase tracking-widest font-bold">* Tarif hors-zone : le prix de la livraison vous sera communiqué lorsque votre commande sera confirmée</p>
                   </div>
                 )}
 
@@ -216,13 +233,26 @@ export default function CheckoutPage() {
 
               <div className="space-y-4 pt-4 border-t border-white/10">
                 <div className="flex justify-between text-[10px] uppercase tracking-[0.2em] text-white/40">
+                  <span>Sous-total</span>
+                  <span className="text-white">{subtotal.toLocaleString()} FCFA</span>
+                </div>
+                <div className="flex justify-between text-[10px] uppercase tracking-[0.2em] text-white/40">
                   <span>Livraison</span>
-                  <span className="text-white">{shippingCost.toLocaleString()} FCFA</span>
+                  <span className={isCustomShipping ? "text-yellow-600" : "text-white"}>{shippingLabel}</span>
                 </div>
                 <div className="flex justify-between items-end pt-4">
-                  <span className="text-[10px] font-black uppercase text-yellow-600 tracking-[0.3em]">Total TTC</span>
-                  <span className="text-3xl font-black tracking-tighter">{total.toLocaleString()} FCFA</span>
+                  <span className="text-[10px] font-black uppercase text-yellow-600 tracking-[0.3em]">
+                    {isCustomShipping ? "Total Produits" : "Total TTC"}
+                  </span>
+                  <span className="text-3xl font-black tracking-tighter">
+                    {(isCustomShipping ? subtotal : total).toLocaleString()} FCFA
+                  </span>
                 </div>
+                {isCustomShipping && (
+                  <p className="text-[9px] text-yellow-600/70 uppercase tracking-widest pt-2 italic">
+                    Le tarif de livraison sera ajouté lors de la confirmation
+                  </p>
+                )}
               </div>
 
               <button 
