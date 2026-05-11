@@ -125,7 +125,7 @@ export default function ProductClient({ product }) {
               <div className={`mb-12 ${isSoldOut ? 'opacity-20 pointer-events-none' : ''}`}>
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-xs font-black text-black uppercase tracking-widest">Choisir la Mesure</h3>
-                  <button className="text-[10px] text-gray-400 uppercase border-b border-gray-200 hover:text-yellow-600 transition">Guide des tailles</button>
+                  <a href="/guide-tailles" className="text-[10px] text-gray-400 uppercase border-b border-gray-200 hover:text-yellow-600 transition">Guide des tailles</a>
                 </div>
                 <div className="flex flex-wrap gap-4">
                   {product.sizes.map((size) => (
@@ -133,7 +133,7 @@ export default function ProductClient({ product }) {
                       key={size}
                       onClick={() => setSelectedSize(size)}
                       className={`
-                        h-14 w-14 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-500 border-2
+                        h-14 w-40 rounded flex items-center justify-center font-bold text-sm transition-all duration-500 border-2
                         ${selectedSize === size 
                           ? 'bg-black border-yellow-600 text-yellow-600 shadow-2xl scale-110' 
                           : 'bg-white border-gray-100 text-gray-400 hover:border-black hover:text-black'}
@@ -150,7 +150,7 @@ export default function ProductClient({ product }) {
             <div className="space-y-12 mb-20">
               <div className="group">
                 <h3 className="text-[10px] font-black text-black mb-4 uppercase tracking-[0.3em] flex items-center gap-2">
-                  <span className="w-4 h-[1px] bg-yellow-600"></span> L'Éditorial
+                  <span className="w-4 h-[1px] bg-yellow-600"></span> Description
                 </h3>
                 <p className={`leading-relaxed font-serif italic text-xl ${isSoldOut ? 'text-gray-300' : 'text-gray-500'}`}>
                   "{product.description || "Une pièce d'exception conçue pour les femmes de pouvoir et d'élégance."}"
