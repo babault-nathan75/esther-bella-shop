@@ -35,6 +35,10 @@ export default function HomeView() {
   const heroLeft = pinned("left") || autoPieces.shift();
   const heroRight = pinned("right") || autoPieces.shift();
   const heroPieces = [heroLeft, heroCenter, heroRight].filter(Boolean);
+  // Tant qu'une nouveauté est en vitrine, l'accueil y conduit en priorité
+  const hasNewArrivals = inStock.some(isNewArrival);
+  const heroPrimary = hasNewArrivals ? { href: "/nouveautes", label: "Voir les nouveautés" } : { href: "/shop", label: "Voir le prêt à porter" };
+  const heroSecondary = hasNewArrivals ? { href: "/shop", label: "Voir le prêt à porter" } : { href: "/confection", label: "Faire confectionner" };
   const spotlights = products.filter((p) => p.featured === true && isOrderable(p));
   const spotlight = spotlights.length === 1 ? spotlights[0] : null;
   const readyToWear = inStock.filter((p) => !isStockListed(p));
@@ -74,19 +78,21 @@ export default function HomeView() {
 
         <div className="pointer-events-none relative w-full md:pointer-events-auto mx-auto grid max-w-7xl items-center gap-10 px-4 pb-28 pt-10 md:grid-cols-[1fr_1.1fr] md:px-6 md:py-14">
           <div className="rise">
-            <p className="font-script text-4xl text-red-400 md:text-5xl">Tout juste arrivé</p>
+            <p className="font-script text-4xl text-red-400 md:text-5xl">{hasNewArrivals ? "Tout juste arrivé" : "Notre sélection"}</p>
             <h1 className="mt-2 font-serif text-[3rem] font-bold leading-[1.02] md:text-6xl lg:text-7xl">
-              Les nouveautés sont <em className="font-serif text-brand">arrivées.</em>
+              {hasNewArrivals
+                ? <>Les nouveautés sont <em className="font-serif text-brand">arrivées.</em></>
+                : <>Votre prochaine tenue <em className="font-serif text-brand">vous attend.</em></>}
             </h1>
             <p className="mt-5 max-w-md text-lg text-white/70">
               Choisissez votre tenue et commandez en quelques instants, directement ici.
             </p>
             <div className="pointer-events-auto mt-6 flex flex-col gap-2.5 sm:flex-row md:mt-8 md:gap-3">
-              <Link href="/shop" className="group inline-flex h-13 items-center justify-center gap-2 rounded-full bg-brand active:scale-[0.98] px-7 font-semibold transition-colors hover:bg-brand-dark">
-                Voir le prêt à porter <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
+              <Link href={heroPrimary.href} className="group inline-flex h-13 items-center justify-center gap-2 rounded-full bg-brand active:scale-[0.98] px-7 font-semibold transition-colors hover:bg-brand-dark">
+                {heroPrimary.label} <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
               </Link>
-              <Link href="/confection" className="inline-flex h-13 items-center justify-center rounded-full border border-white/30 active:scale-[0.98] px-7 font-semibold transition-colors hover:bg-white hover:text-ink">
-                Faire confectionner
+              <Link href={heroSecondary.href} className="inline-flex h-13 items-center justify-center rounded-full border border-white/30 active:scale-[0.98] px-7 font-semibold transition-colors hover:bg-white hover:text-ink">
+                {heroSecondary.label}
               </Link>
             </div>
           </div>
