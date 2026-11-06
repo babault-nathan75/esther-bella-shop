@@ -1,61 +1,69 @@
 "use client";
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useMemo, useState } from "react";
+import { useCatalog } from "@/context/CatalogContext";
 
 export const CartContext = createContext({});
 
 export function CartContextProvider({ children }) {
-  const [cartProducts, setCartProducts] = useState(() => {
-    const ls = typeof window !== "undefined" ? window.localStorage : null;
-    if (ls && ls.getItem('cart')) {
-      try {
-        return JSON.parse(ls.getItem('cart'));
-      } catch (e) {
-        console.error("Erreur lecture localStorage", e);
-        return [];
-      }
-    }
-    return [];
-  });
+  const { products, version } = useCatalog();
+  const [storedItems, setStoredItems] = useState([]);
+  const [ready, setReady] = useState(false);
 
-  // 2. SAUVEGARDE SYNCHRONISÉE (Correction ici)
+  // Lecture après le montage pour que le premier rendu soit identique à celui du serveur
   useEffect(() => {
-    const ls = typeof window !== "undefined" ? window.localStorage : null;
-    if (!ls) return;
-
-    // On sauvegarde TOUJOURS, même si le tableau est vide []
-    // Cela permet d'écraser les anciennes données quand on vide le panier
-    ls.setItem('cart', JSON.stringify(cartProducts));
-    
-    // Si c'est vide, on peut même nettoyer proprement
-    if (cartProducts.length === 0) {
-      ls.removeItem('cart');
+    try {
+      const saved = JSON.parse(window.localStorage.getItem('cart') || "[]");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (Array.isArray(saved)) setStoredItems(saved);
+    } catch (e) {
+      console.error("Erreur lecture localStorage", e);
     }
-  }, [cartProducts]);
+    setReady(true);
+  }, []);
 
-  function addProduct(product, size) {
-    setCartProducts(prev => [...prev, { ...product, selectedSize: size, cartId: Date.now() }]);
+  useEffect(() => {
+    if (!ready) return;
+    try {
+      window.localStorage.setItem('cart', JSON.stringify(storedItems));
+    } catch (e) {
+      console.error("Erreur écriture localStorage", e);
+    }
+  }, [storedItems, ready]);
+
+  // Le panier suit le catalogue en direct : prix et disponibilité restent à jour
+  const cartProducts = useMemo(() => {
+    if (!version) return storedItems;
+    const live = new Map(products.map((p) => [p._id, p]));
+    return storedItems.map((item) => {
+      const product = live.get(item._id);
+      return product ? { ...item, ...product } : { ...item, available: false };
+    });
+  }, [storedItems, products, version]);
+
+  function addProduct(product, size, notes = "") {
+    setStoredItems(prev => [...prev, {
+      _id: product._id,
+      title: product.title,
+      price: product.price,
+      images: product.images,
+      kind: product.kind,
+      leadTime: product.leadTime,
+      selectedSize: size,
+      notes,
+      cartId: `${product._id}-${Date.now()}`,
+    }]);
   }
 
   function removeProduct(cartId) {
-    setCartProducts(prev => {
-      const newCart = prev.filter(item => item.cartId !== cartId);
-      // Optionnel : on peut forcer le ls ici pour une sécurité maximale
-      return newCart;
-    });
+    setStoredItems(prev => prev.filter(item => item.cartId !== cartId));
   }
 
   function clearCart() {
-    setCartProducts([]);
-    // Le useEffect s'occupera de faire le ls.removeItem('cart')
+    setStoredItems([]);
   }
 
-  const isCartValid = () => {
-    if (cartProducts.length === 0) return false;
-    return !cartProducts.some(product => product.available === false);
-  };
-
   return (
-    <CartContext.Provider value={{ cartProducts, setCartProducts, addProduct, removeProduct, clearCart, isCartValid }}>
+    <CartContext.Provider value={{ cartProducts, ready, addProduct, removeProduct, clearCart }}>
       {children}
     </CartContext.Provider>
   );

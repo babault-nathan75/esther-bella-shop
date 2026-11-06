@@ -1,101 +1,64 @@
 "use client";
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+import Media from "@/components/Media";
+import { formatPrice, isConfection, isInStock, isNewArrival, isOrderable, isVideo, stockLeft } from "@/lib/shop";
 
-export default function ProductCard({ product }) {
-  const isSoldOut = product.available === false;
-  const mainMedia = product.images?.[0];
-  const isVideo = mainMedia && /\.(mp4|webm|ogg|mov)$/i.test(mainMedia);
+const BADGE = "rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm md:text-xs";
+
+export default function ProductCard({ product, eager = false, showStock = false }) {
+  const soldOut = !isOrderable(product);
+  const left = stockLeft(product);
+  const secondImage = !soldOut && product.images?.slice(1).find((src) => !isVideo(src));
 
   return (
     <Link
       href={`/product/${product._id}`}
-      className={`group flex flex-col animate-in fade-in duration-1000 ${isSoldOut ? 'cursor-default pointer-events-none' : 'cursor-pointer'}`}
-      onClick={(e) => isSoldOut && e.preventDefault()}
+      className="group rise relative block rounded-[1.25rem] bg-white p-1.5 shadow-[0_2px_14px_rgba(0,0,0,0.07)] ring-1 ring-black/5 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_18px_40px_rgba(228,21,27,0.2)] hover:ring-brand/50 active:scale-[0.98] md:p-2"
     >
-      {/* --- IMAGE CONTAINER (Ratio 2/3 Éditorial) --- */}
-      <div className="relative aspect-[2/3] overflow-hidden bg-zinc-100 mb-8 shadow-sm group-hover:shadow-2xl transition-all duration-700">
-
-        {mainMedia ? (
-          isVideo ? (
-            <video
-              src={mainMedia}
-              autoPlay
-              muted
-              loop
-              playsInline
-              className={`w-full h-full object-cover transition-transform duration-[2s] ease-out
-                ${isSoldOut ? 'grayscale contrast-75 opacity-40' : 'group-hover:scale-110'}`}
-            />
-          ) : (
-            <img
-              src={mainMedia}
-              alt={product.title}
-              className={`w-full h-full object-cover transition-transform duration-[2s] ease-out
-                ${isSoldOut ? 'grayscale contrast-75 opacity-40' : 'group-hover:scale-110'}`}
-            />
-          )
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-300 uppercase tracking-widest">
-            Maison EBF
-          </div>
+      <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-paper">
+        <Media
+          src={product.images?.[0]}
+          alt={product.title}
+          eager={eager}
+          className={`h-full w-full object-cover transition-all duration-700 ${soldOut ? "opacity-50 grayscale" : "group-hover:scale-105"} ${secondImage ? "md:group-hover:opacity-0" : ""}`}
+        />
+        {/* Au survol, la deuxième photo de la tenue */}
+        {secondImage && (
+          <Media src={secondImage} alt="" className="absolute inset-0 hidden h-full w-full object-cover opacity-0 transition-opacity duration-700 group-hover:opacity-100 md:block" />
         )}
-
-        {/* --- OVERLAYS D'ÉTAT --- */}
-        {isSoldOut ? (
-          <div className="absolute inset-0 bg-zinc-900/10 backdrop-blur-[1px] flex items-center justify-center">
-            <div className="flex flex-col items-center gap-2">
-              <span className="bg-black text-white px-8 py-3 text-[10px] font-black uppercase tracking-[0.5em] border border-white/20 shadow-2xl transform -rotate-2">
-                Sold Out
-              </span>
-              <span className="text-[8px] font-black text-black/40 uppercase tracking-widest">
-                Victime de son succès
-              </span>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Overlay au hover (Subtile) */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-700"></div>
-
-            {/* Badge "VOIR LA PIÈCE" au hover */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500">
-              <span className="bg-white/95 backdrop-blur-md px-6 py-3 text-[9px] font-black tracking-[0.3em] text-black border border-gray-100 translate-y-4 group-hover:translate-y-0 transition-transform">
-                VOIR LA PIÈCE
-              </span>
-            </div>
-          </>
+        <div className="absolute left-2 top-2 flex flex-col items-start gap-1">
+          {!soldOut && product.featured && <span className={`${BADGE} bg-ink text-white`}>Article du moment</span>}
+          {soldOut && <span className={`${BADGE} bg-ink text-white`}>Épuisé</span>}
+          {isNewArrival(product) && <span className={`${BADGE} bg-brand text-white`}>Nouveau</span>}
+          {!soldOut && isConfection(product) && <span className={`${BADGE} bg-white text-ink`}>Sur commande</span>}
+        </div>
+        {showStock && isInStock(product) && (
+          <span className={`${BADGE} absolute bottom-2 left-2 bg-black/75 text-white backdrop-blur-sm`}>
+            {left !== null ? `${left} en stock` : "En stock"}
+          </span>
         )}
+        <span aria-hidden="true" className="absolute bottom-2 right-2 hidden h-10 w-10 translate-y-2 items-center justify-center rounded-full bg-brand text-white opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 md:flex">
+          <ArrowUpRight size={18} />
+        </span>
       </div>
-
-      {/* --- INFOS PRODUIT --- */}
-      <div className="space-y-3 text-center px-4">
-        <div className="flex flex-col items-center gap-1">
-          <div className={`h-[1px] transition-all duration-700 mb-2 ${isSoldOut ? 'w-8 bg-gray-200' : 'w-0 bg-yellow-600 group-hover:w-12'}`}></div>
-
-          <h3 className={`text-[11px] font-black uppercase tracking-[0.3em] leading-tight transition-colors duration-300
-            ${isSoldOut ? 'text-gray-300' : 'text-black group-hover:text-yellow-600'}`}>
-            {product.title}
-          </h3>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <p className={`text-[14px] font-bold tracking-tighter transition-colors ${isSoldOut ? 'text-gray-200 line-through' : 'text-black'}`}>
-            {product.price?.toLocaleString()} <span className="text-[10px] font-medium uppercase tracking-normal">FCFA</span>
-          </p>
-
-          {!isSoldOut && (
-            <span className="text-[8px] text-yellow-600/50 font-black uppercase tracking-[0.4em] opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-              Édition Limitée
-            </span>
-          )}
-
-          {isSoldOut && (
-            <span className="text-[8px] text-gray-200 font-black uppercase tracking-[0.3em] mt-1">
-              Bientôt de retour ?
-            </span>
-          )}
-        </div>
+      <div className="px-2 pb-2 pt-3">
+        <h3 className={`line-clamp-2 min-h-[2.5em] font-serif text-[15px] font-semibold leading-tight transition-colors group-hover:text-brand md:text-lg ${soldOut ? "text-muted" : "text-ink"}`}>{product.title}</h3>
+        <p className={`mt-1 text-sm font-bold transition-colors group-hover:text-brand md:text-base ${soldOut ? "text-muted line-through" : "text-ink"}`}>{formatPrice(product.price)}</p>
+        {!soldOut && isConfection(product) && product.leadTime && (
+          <p className="mt-0.5 text-xs text-muted">Prête en {product.leadTime}</p>
+        )}
       </div>
     </Link>
+  );
+}
+
+export function ProductGrid({ products, showStock = false }) {
+  return (
+    <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
+      {products.map((product, index) => (
+        <ProductCard key={product._id} product={product} eager={index < 4} showStock={showStock} />
+      ))}
+    </div>
   );
 }
