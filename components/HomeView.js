@@ -35,7 +35,8 @@ export default function HomeView() {
   const heroLeft = pinned("left") || autoPieces.shift();
   const heroRight = pinned("right") || autoPieces.shift();
   const heroPieces = [heroLeft, heroCenter, heroRight].filter(Boolean);
-  const spotlight = products.find((p) => p.featured === true && isOrderable(p));
+  const spotlights = products.filter((p) => p.featured === true && isOrderable(p));
+  const spotlight = spotlights.length === 1 ? spotlights[0] : null;
   const readyToWear = inStock.filter((p) => !isStockListed(p));
   const confection = products.filter((p) => isConfection(p) && isOrderable(p));
   const lowestDelivery = zones.length ? Math.min(...zones.map((z) => z.price)) : null;
@@ -153,6 +154,28 @@ export default function HomeView() {
               <Link href={`/product/${spotlight._id}`} className="group mt-6 inline-flex h-13 items-center gap-2 rounded-full bg-ink px-7 font-semibold text-white transition-colors hover:bg-brand active:scale-[0.98]">
                 Découvrir <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
               </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {spotlights.length > 1 && (
+        <section aria-label="Articles du moment" className="bg-gradient-to-b from-paper to-white py-10 md:py-20">
+          <div className="mx-auto max-w-7xl px-4 md:px-6">
+            <p className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 text-sm font-semibold text-white"><Star size={15} fill="currentColor" /> Articles du moment</p>
+            <h2 className="mb-7 mt-3 font-serif text-4xl font-bold md:text-6xl">Nos coups de cœur</h2>
+            <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 md:mx-0 md:grid md:grid-cols-2 md:gap-6 md:overflow-visible md:px-0 lg:grid-cols-3">
+              {spotlights.map((product) => (
+                <Link key={product._id} href={`/product/${product._id}`} className="group block w-[78vw] shrink-0 snap-center rounded-3xl bg-white p-2 shadow-xl ring-1 ring-line transition-transform duration-300 hover:-translate-y-1.5 sm:w-[46vw] md:w-auto">
+                  <div className="overflow-hidden rounded-2xl">
+                    <Media src={product.images?.[0]} alt={product.title} className="aspect-[4/5] w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  </div>
+                  <div className="p-3">
+                    <h3 className="font-serif text-2xl font-bold leading-tight transition-colors group-hover:text-brand">{product.title}</h3>
+                    <p className="mt-1 text-lg font-bold transition-colors group-hover:text-brand">{formatPrice(product.price)}</p>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
         </section>

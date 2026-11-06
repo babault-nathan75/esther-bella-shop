@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { Pencil, Plus, Search, Sparkles, Star, Trash2 } from "lucide-react";
 import Media from "@/components/Media";
@@ -14,6 +14,8 @@ export default function ProductsPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [togglingId, setTogglingId] = useState(null);
+  const [heroMessage, setHeroMessage] = useState("");
+  const pendingHeroChanges = useRef(0);
 
   const fetchProducts = () => {
     axios.get("/api/products").then(response => {
@@ -61,6 +63,27 @@ export default function ProductsPage() {
     }
   };
 
+  const changeHeroSlot = async (slot, current, nextId) => {
+    if (!nextId && !current) return;
+    // Le serveur libère lui-même la place : une seule requête par changement
+    const changes = nextId ? { _id: nextId, heroSlot: slot } : { _id: current._id, heroSlot: null };
+    setHeroMessage("");
+    pendingHeroChanges.current += 1;
+    setProducts((prev) => prev.map((p) => {
+      if (p._id === nextId) return { ...p, heroSlot: slot };
+      return p.heroSlot === slot ? { ...p, heroSlot: null } : p;
+    }));
+    try {
+      await axios.patch("/api/products", changes);
+      setHeroMessage("Vitrine enregistrée. L'accueil se met à jour tout seul.");
+    } catch (error) {
+      setHeroMessage(error.response?.data?.error || "La vitrine n'a pas pu être enregistrée.");
+    }
+    // Recharger seulement après le dernier changement : une réponse ancienne n'écrase pas l'écran
+    pendingHeroChanges.current -= 1;
+    if (pendingHeroChanges.current === 0) fetchProducts();
+  };
+
   const daysLeft = (product) =>
     Math.max(1, Math.ceil((arrivalTime(product) + NEW_ARRIVAL_DAYS * 86400000 - Date.now()) / 86400000));
 
@@ -94,10 +117,7 @@ export default function ProductsPage() {
                 <select
                   id={`slot-${slot}`}
                   value={current?._id || ""}
-                  onChange={async (e) => {
-                    if (current) await patchProduct({ _id: current._id, heroSlot: null }, "Impossible de modifier la vitrine.");
-                    if (e.target.value) await patchProduct({ _id: e.target.value, heroSlot: slot }, "Impossible de modifier la vitrine.");
-                  }}
+                  onChange={(e) => changeHeroSlot(slot, current, e.target.value)}
                   className="field"
                 >
                   <option value="">Automatique</option>
@@ -107,6 +127,7 @@ export default function ProductsPage() {
             );
           })}
         </div>
+        {heroMessage && <p role="status" className="mt-3 text-sm font-semibold text-green-800">{heroMessage}</p>}
       </section>
 
       {!loading && visible.length === 0 && (
@@ -141,7 +162,7 @@ export default function ProductsPage() {
               )}
               <button
                 type="button"
-                onClick={() => patchProduct({ _id: product._id, featured: !product.featured }, "Impossible de modifier l'article du moment.")}
+                onClick={() => patchProduct({ _id: product._id, featured: !product.featured }, "Impossible de modifier les articles du moment.")}
                 aria-pressed={Boolean(product.featured)}
                 className={`inline-flex h-11 items-center gap-1.5 rounded-full px-4 text-xs font-semibold ${product.featured ? "bg-ink text-white" : "border border-line hover:border-ink"}`}
               >

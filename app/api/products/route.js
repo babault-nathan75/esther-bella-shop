@@ -117,12 +117,14 @@ export async function PATCH(req) {
     if (heroSlot !== undefined) {
       const slot = ["left", "center", "right"].includes(heroSlot) ? heroSlot : null;
       if (slot) await Product.updateMany({ heroSlot: slot, _id: { $ne: _id } }, { heroSlot: null });
-      await Product.updateOne({ _id }, { heroSlot: slot });
+      const updated = await Product.findByIdAndUpdate(_id, { heroSlot: slot }, { new: true }).select("heroSlot").lean();
+      if (!updated || (updated.heroSlot ?? null) !== slot) {
+        return NextResponse.json({ error: "La vitrine n'a pas pu être enregistrée." }, { status: 500 });
+      }
       return NextResponse.json(true);
     }
 
     if (featured !== undefined) {
-      if (featured) await Product.updateMany({ featured: true, _id: { $ne: _id } }, { featured: false });
       await Product.updateOne({ _id }, { featured: Boolean(featured) });
       return NextResponse.json(true);
     }
