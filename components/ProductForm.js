@@ -38,7 +38,7 @@ export default function ProductForm({
   const [quantity, setQuantity] = useState(initialQuantity ?? "");
   const [kind, setKind] = useState(initialKind === "confection" ? "confection" : initialInStock ? "stock" : _id ? "ready" : defaultKind);
   const [poster, setPoster] = useState({
-    enabled: false, collection: "", title: "", text: "", colorName: "", clawColor: "#7ec8e3", backgroundColor: "#ffffff",
+    enabled: false, collection: "", title: "", text: "", colorName: "", motif: "griffure", clawColor: "#7ec8e3", backgroundColor: "#ffffff",
     ...initialPoster,
   });
   const updatePoster = (field) => (e) => setPoster((prev) => ({ ...prev, [field]: e.target.value }));
@@ -171,10 +171,10 @@ export default function ProductForm({
         </fieldset>
 
         <fieldset className="rounded-2xl border border-line bg-white p-5 shadow-sm">
-          <legend className="sr-only">Affiche à griffures</legend>
+          <legend className="sr-only">Affiche de collection</legend>
           <label className="flex min-h-11 cursor-pointer items-center gap-3 font-semibold">
             <input type="checkbox" checked={poster.enabled} onChange={(e) => setPoster((prev) => ({ ...prev, enabled: e.target.checked }))} className="h-5 w-5 accent-[var(--color-brand)]" />
-            Affiche à griffures
+            Affiche de collection
           </label>
           <p className="text-sm text-muted">Visible sur la page de la tenue et dans Nouveautés, pendant ses 7 jours.</p>
           {poster.enabled && (
@@ -182,12 +182,19 @@ export default function ProductForm({
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label htmlFor="poster-collection" className="mb-1 block text-sm font-medium">Collection</label>
-                  <input id="poster-collection" placeholder="Panthère" value={poster.collection} onChange={updatePoster("collection")} className="field" />
+                  <input id="poster-collection" placeholder="Panthère, Fleurie…" value={poster.collection} onChange={updatePoster("collection")} className="field" />
                 </div>
                 <div>
                   <label htmlFor="poster-color-name" className="mb-1 block text-sm font-medium">Nom de la couleur</label>
                   <input id="poster-color-name" placeholder="Bleu ciel" value={poster.colorName} onChange={updatePoster("colorName")} className="field" />
                 </div>
+              </div>
+              <div>
+                <label htmlFor="poster-motif" className="mb-1 block text-sm font-medium">Motif de fond</label>
+                <select id="poster-motif" value={poster.motif} onChange={updatePoster("motif")} className="field">
+                  <option value="griffure">Griffures</option>
+                  <option value="fleur">Fleurs</option>
+                </select>
               </div>
               <div>
                 <label htmlFor="poster-title" className="mb-1 block text-sm font-medium">Titre de l&apos;affiche</label>
@@ -198,7 +205,7 @@ export default function ProductForm({
                 <textarea id="poster-text" rows={2} value={poster.text} onChange={updatePoster("text")} className="field resize-none" />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <label className="text-sm font-medium">Couleur de la griffure
+                <label className="text-sm font-medium">Couleur du motif
                   <input type="color" value={poster.clawColor} onChange={updatePoster("clawColor")} className="mt-1 block h-12 w-full cursor-pointer rounded-lg border border-line p-1" />
                 </label>
                 <label className="text-sm font-medium">Couleur du fond

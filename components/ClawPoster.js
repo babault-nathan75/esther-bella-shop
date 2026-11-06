@@ -54,6 +54,40 @@ function ClawMarks({ color }) {
   );
 }
 
+// Orchidée originale : trois sépales fins, deux larges pétales, labelle au centre
+const PETAL = "M0 0C-20 -14 -46 -50 -34 -82C-26 -102 26 -102 34 -82C46 -50 20 -14 0 0Z";
+const SEPAL = "M0 0C-16 -30 -20 -76 0 -108C20 -76 16 -30 0 0Z";
+const VEINS = "M0 -6L0 -90M0 -30L-18 -74M0 -30L18 -74M0 -52L-26 -80M0 -52L26 -80";
+
+function Orchid({ x, y, scale, rotate, color, vein }) {
+  return (
+    <g transform={`translate(${x} ${y}) rotate(${rotate}) scale(${scale})`}>
+      {[0, 132, 228].map((angle) => <path key={angle} d={SEPAL} fill={color} opacity="0.75" transform={`rotate(${angle})`} />)}
+      {[-72, 72].map((angle) => (
+        <g key={angle} transform={`rotate(${angle})`}>
+          <path d={PETAL} fill={color} />
+          <path d={VEINS} fill="none" stroke={vein} strokeWidth="1.8" opacity="0.6" />
+        </g>
+      ))}
+      <path d="M0 -4C-20 6 -22 30 0 44C22 30 20 6 0 -4Z" fill={vein} opacity="0.85" />
+      <circle r="7" fill={color} />
+    </g>
+  );
+}
+
+const ORCHIDS = [
+  [70, 95, 0.95, -18], [330, 70, 0.7, 25], [205, 245, 0.8, 40],
+  [40, 345, 0.65, 70], [355, 300, 0.95, -35], [175, 470, 1, 10], [385, 495, 0.6, 50],
+];
+
+function FlowerMarks({ color, vein }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 400 520" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full">
+      {ORCHIDS.map(([x, y, scale, rotate]) => <Orchid key={`${x}-${y}`} x={x} y={y} scale={scale} rotate={rotate} color={color} vein={vein} />)}
+    </svg>
+  );
+}
+
 // Noir ou blanc selon le fond choisi par l'admin, pour rester lisible
 function readableText(hex) {
   const n = parseInt(String(hex).replace("#", ""), 16);
@@ -66,8 +100,9 @@ export function hasPoster(product) {
 }
 
 export default function ClawPoster({ product, compact = false }) {
-  const { collection, title, text, colorName, clawColor = "#7ec8e3", backgroundColor = "#ffffff" } = product.poster;
+  const { collection, title, text, colorName, motif, clawColor = "#7ec8e3", backgroundColor = "#ffffff" } = product.poster;
   const ink = readableText(backgroundColor);
+  const marks = motif === "fleur" ? <FlowerMarks color={clawColor} vein={backgroundColor} /> : <ClawMarks color={clawColor} />;
   const photo = (
     <div className="relative overflow-hidden rounded-2xl shadow-2xl ring-4 ring-white/70">
       <Media src={product.images?.[0]} alt={product.title} className="aspect-[3/4] w-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -77,7 +112,7 @@ export default function ClawPoster({ product, compact = false }) {
   if (compact) {
     return (
       <Link href={`/product/${product._id}`} className="group rise relative block overflow-hidden rounded-3xl p-4 md:p-6" style={{ backgroundColor, color: ink }}>
-        <ClawMarks color={clawColor} />
+        {marks}
         <div className="relative">
           {collection && <p className="font-serif text-sm italic">Collection {collection}</p>}
           <h3 className="mb-3 mt-0.5 font-serif text-xl font-bold leading-tight md:text-3xl">{title || colorName || product.title}</h3>
@@ -93,7 +128,7 @@ export default function ClawPoster({ product, compact = false }) {
 
   return (
     <section aria-label={`Affiche de ${product.title}`} className="group relative overflow-hidden rounded-3xl" style={{ backgroundColor, color: ink }}>
-      <ClawMarks color={clawColor} />
+      {marks}
       <div className="relative grid items-center gap-6 p-6 md:grid-cols-2 md:gap-12 md:p-14">
         <div>
           {collection && <p className="font-serif text-xl italic md:text-2xl">Collection {collection}</p>}

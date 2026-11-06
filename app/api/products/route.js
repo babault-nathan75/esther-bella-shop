@@ -15,6 +15,7 @@ function toPoster(poster) {
     title: String(poster.title || "").trim().slice(0, 80),
     text: String(poster.text || "").trim().slice(0, 400),
     colorName: String(poster.colorName || "").trim().slice(0, 40),
+    motif: poster.motif === "fleur" ? "fleur" : "griffure",
     clawColor: HEX_COLOR.test(poster.clawColor) ? poster.clawColor : "#7ec8e3",
     backgroundColor: HEX_COLOR.test(poster.backgroundColor) ? poster.backgroundColor : "#ffffff",
   };
