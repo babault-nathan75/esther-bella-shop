@@ -1,11 +1,12 @@
 // app/robots.js
+import { SITE_URL } from "@/lib/site";
 export default function robots() {
   return {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: '/admin/', // On cache l'administration des recherches Google
+      disallow: ['/admin/', '/api/', '/cart', '/checkout', '/recherche', '/suivi'],
     },
-    sitemap: 'https://esther-bella-shop.vercel.app/sitemap.xml',
+    sitemap: `${SITE_URL}/sitemap.xml`,
   }
 }

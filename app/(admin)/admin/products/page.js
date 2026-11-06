@@ -2,27 +2,35 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Plus, Pencil, Trash2, Video, Image as ImageIcon, ExternalLink, CheckCircle2, XCircle } from "lucide-react";
-import Image from "next/image";
+import { Pencil, Plus, Search, Sparkles, Star, Trash2 } from "lucide-react";
+import Media from "@/components/Media";
+import { NEW_ARRIVAL_DAYS, arrivalTime, formatPrice, isConfection, isInStock, isNewArrival, searchProducts } from "@/lib/shop";
+
+const HERO_SLOTS = [["left", "À gauche"], ["center", "Au milieu"], ["right", "À droite"]];
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
   const [togglingId, setTogglingId] = useState(null);
 
   const fetchProducts = () => {
     axios.get("/api/products").then(response => {
       setProducts(response.data);
+      setLoading(false);
     });
   };
 
   useEffect(() => {
     fetchProducts();
+    axios.get("/api/categories").then(res => setCategories(res.data));
   }, []);
 
-  const deleteProduct = async (id) => {
-    if (window.confirm("Voulez-vous vraiment retirer cette pièce de la collection ?")) {
+  const deleteProduct = async (product) => {
+    if (window.confirm(`Supprimer définitivement « ${product.title} » ?`)) {
       try {
-        await axios.delete(`/api/products?id=${id}`);
+        await axios.delete(`/api/products?id=${product._id}`);
         fetchProducts();
       } catch (error) {
         alert("Erreur lors de la suppression.");
@@ -31,7 +39,7 @@ export default function ProductsPage() {
   };
 
   const toggleAvailability = async (product) => {
-    const next = !(product.available !== false);
+    const next = product.available === false;
     setTogglingId(product._id);
     setProducts(prev => prev.map(p => p._id === product._id ? { ...p, available: next } : p));
     try {
@@ -44,150 +52,123 @@ export default function ProductsPage() {
     }
   };
 
-  const isVideo = (filename) => filename && filename.match(/\.(mp4|webm|ogg|mov)$/i);
+  const patchProduct = async (changes, fallback) => {
+    try {
+      await axios.patch("/api/products", changes);
+      fetchProducts();
+    } catch (error) {
+      alert(fallback);
+    }
+  };
+
+  const daysLeft = (product) =>
+    Math.max(1, Math.ceil((arrivalTime(product) + NEW_ARRIVAL_DAYS * 86400000 - Date.now()) / 86400000));
+
+  const visible = searchProducts(products, categories, search);
+  const categoryName = (id) => categories.find(c => c._id === id)?.name;
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-4 font-montserrat">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-        <div>
-           <h1 className="text-4xl font-black text-black uppercase tracking-tighter">Inventaire <span className="font-serif italic text-yellow-600 font-light lowercase">Royal</span></h1>
-           <p className="text-[10px] text-gray-400 uppercase tracking-[0.3em] mt-2 font-bold">Gestion de la collection Esther Bella</p>
-        </div>
-
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <Link
-            href="/"
-            target="_blank"
-            className="flex-1 md:flex-none border border-gray-200 text-gray-400 px-6 py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-black hover:text-white transition-all text-[10px] font-black uppercase tracking-widest"
-          >
-            <ExternalLink size={16} /> Boutique
-          </Link>
-
-          <Link
-            href="/admin/products/new"
-            className="flex-1 md:flex-none bg-black text-yellow-600 px-8 py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-yellow-600 hover:text-black shadow-xl transition-all text-[10px] font-black uppercase tracking-widest"
-          >
-            <Plus size={18} /> Ajouter une pièce
-          </Link>
-        </div>
+    <div>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-serif text-3xl font-bold">Tenues</h1>
+        <Link href="/admin/products/new" className="inline-flex h-11 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-dark">
+          <Plus size={18} /> Nouvelle tenue
+        </Link>
       </div>
 
-      {/* Tableau Design Luxe */}
-      <div className="bg-white rounded-[2rem] shadow-sm overflow-hidden border border-gray-100">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-gray-50/50 text-[10px] uppercase text-gray-400 font-black tracking-[0.2em] border-b border-gray-100">
-            <tr>
-              <th className="p-6">Visuel</th>
-              <th className="p-6">Désignation</th>
-              <th className="p-6">Tailles</th>
-              <th className="p-6">Disponibilité</th>
-              <th className="p-6">Prix</th>
-              <th className="p-6 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {products.length === 0 && (
-               <tr>
-                 <td colSpan="6" className="p-20 text-center text-gray-300 font-serif italic text-xl">
-                   Votre showroom est vide pour le moment...
-                 </td>
-               </tr>
-            )}
-
-            {products.map(product => {
-              const isAvailable = product.available !== false;
-              return (
-              <tr key={product._id} className="group hover:bg-gray-50/30 transition-colors">
-
-                {/* VISUEL */}
-                <td className="p-6">
-                  <div className="w-16 h-20 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100 shadow-sm relative">
-                    {product.images?.[0] ? (
-                        isVideo(product.images[0]) ? (
-                            <div className="relative w-full h-full bg-black">
-                                <video src={product.images[0]} className="w-full h-full object-cover opacity-60" muted playsInline />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <Video size={16} className="text-white" />
-                                </div>
-                            </div>
-                        ) : (
-                            <Image src={product.images[0]} alt={product.title} className="w-full h-full object-cover" width={100} height={120} />
-                        )
-                    ) : (
-                        <ImageIcon size={20} className="text-gray-200" />
-                    )}
-                  </div>
-                </td>
-
-                {/* NOM & DESCRIPTION */}
-                <td className="p-6">
-                    <div className="font-black text-black uppercase text-sm tracking-tight">{product.title}</div>
-                    <div className="text-[10px] text-gray-400 uppercase tracking-widest mt-1 line-clamp-1 max-w-[200px]">{product.description || "Aucune description"}</div>
-                </td>
-
-                {/* TAILLES */}
-                <td className="p-6">
-                   <div className="flex gap-1 flex-wrap max-w-[120px]">
-                     {product.sizes && product.sizes.length > 0 ? (
-                        product.sizes.map(s => (
-                            <span key={s} className="text-[9px] bg-black text-yellow-600 px-2 py-1 rounded-md font-black">
-                                {s}
-                            </span>
-                        ))
-                     ) : (
-                        <span className="text-[9px] text-gray-300 font-bold uppercase tracking-widest italic">U</span>
-                     )}
-                   </div>
-                </td>
-
-                {/* DISPONIBILITÉ - BOUTON TOGGLE */}
-                <td className="p-6">
-                    <button
-                      type="button"
-                      onClick={() => toggleAvailability(product)}
-                      disabled={togglingId === product._id}
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all disabled:opacity-50
-                        ${isAvailable
-                          ? 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
-                          : 'bg-red-50 text-red-500 border-red-100 hover:bg-red-100'}`}
-                      title="Cliquer pour basculer la disponibilité"
-                    >
-                      {isAvailable ? (
-                        <><CheckCircle2 size={14} /> Disponible</>
-                      ) : (
-                        <><XCircle size={14} /> Rupture de stock</>
-                      )}
-                    </button>
-                </td>
-
-                {/* PRIX */}
-                <td className="p-6">
-                    <div className="text-black font-black text-sm">
-                        {product.price?.toLocaleString()} <span className="text-[9px] text-gray-400">FCFA</span>
-                    </div>
-                </td>
-
-                {/* ACTIONS */}
-                <td className="p-6">
-                  <div className="flex justify-end gap-2">
-                    <Link href={'/admin/products/edit/'+product._id} className="text-gray-300 hover:text-black transition-all p-3 hover:bg-white border border-transparent hover:border-gray-100 rounded-2xl shadow-none hover:shadow-sm">
-                      <Pencil size={18} />
-                    </Link>
-                    <button
-                        onClick={() => deleteProduct(product._id)}
-                        className="text-gray-300 hover:text-red-500 transition-all p-3 hover:bg-white border border-transparent hover:border-gray-100 rounded-2xl shadow-none hover:shadow-sm"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </td>
-
-              </tr>
-            )})}
-          </tbody>
-        </table>
+      <div className="relative mb-4">
+        <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+        <input type="search" aria-label="Rechercher une tenue" placeholder="Rechercher une tenue…" value={search} onChange={e => setSearch(e.target.value)} className="field pl-10!" />
       </div>
+
+      {/* --- VITRINE DE L'ACCUEIL --- */}
+      <section className="mb-4 rounded-2xl border border-line bg-white p-4 shadow-sm">
+        <h2 className="font-semibold">Vitrine de l&apos;accueil</h2>
+        <p className="mb-3 text-sm text-muted">Choisissez la tenue de chaque place. Sur « Automatique », la plus récente est au milieu, puis à gauche, puis à droite.</p>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {HERO_SLOTS.map(([slot, label]) => {
+            const current = products.find((p) => p.heroSlot === slot);
+            return (
+              <div key={slot}>
+                <label htmlFor={`slot-${slot}`} className="mb-1 block text-sm font-medium">{label}</label>
+                <select
+                  id={`slot-${slot}`}
+                  value={current?._id || ""}
+                  onChange={async (e) => {
+                    if (current) await patchProduct({ _id: current._id, heroSlot: null }, "Impossible de modifier la vitrine.");
+                    if (e.target.value) await patchProduct({ _id: e.target.value, heroSlot: slot }, "Impossible de modifier la vitrine.");
+                  }}
+                  className="field"
+                >
+                  <option value="">Automatique</option>
+                  {products.filter(isInStock).map((p) => <option key={p._id} value={p._id}>{p.title}</option>)}
+                </select>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {!loading && visible.length === 0 && (
+        <p className="rounded-xl bg-white p-10 text-center text-muted">Aucune tenue à afficher.</p>
+      )}
+
+      <ul className="space-y-2">
+        {visible.map(product => {
+          const isAvailable = product.available !== false;
+          return (
+            <li key={product._id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-white shadow-sm p-3">
+              <div className="h-20 w-16 shrink-0 overflow-hidden rounded-md bg-paper">
+                <Media src={product.images?.[0]} alt="" className="h-full w-full object-cover" />
+              </div>
+              <div className="min-w-[10rem] flex-1">
+                <p className="font-medium">{product.title}</p>
+                <p className="text-sm font-bold">{formatPrice(product.price)}</p>
+                <p className="text-xs text-muted">
+                  {[isConfection(product) ? "Sur commande" : product.inStock ? "En stock" : "Prêt à porter", ...(typeof product.quantity === "number" ? [`${product.quantity} pièces`] : []), categoryName(product.category) || "Sans rubrique"].join(" · ")}
+                </p>
+              </div>
+              {isInStock(product) && (
+                <button
+                  type="button"
+                  onClick={() => patchProduct({ _id: product._id, renew: true }, "Impossible de remettre cette tenue en Nouveautés.")}
+                  title={`Remettre ${NEW_ARRIVAL_DAYS} jours dans Nouveautés`}
+                  className={`inline-flex h-11 items-center gap-1.5 rounded-full px-4 text-xs font-semibold ${isNewArrival(product) ? "bg-red-50 text-brand-dark" : "border border-line hover:border-ink"}`}
+                >
+                  <Sparkles size={15} />
+                  {isNewArrival(product) ? `Nouveauté, ${daysLeft(product)} j` : "Remettre en Nouveautés"}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => patchProduct({ _id: product._id, featured: !product.featured }, "Impossible de modifier l'article du moment.")}
+                aria-pressed={Boolean(product.featured)}
+                className={`inline-flex h-11 items-center gap-1.5 rounded-full px-4 text-xs font-semibold ${product.featured ? "bg-ink text-white" : "border border-line hover:border-ink"}`}
+              >
+                <Star size={15} fill={product.featured ? "currentColor" : "none"} />
+                Article du moment
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleAvailability(product)}
+                disabled={togglingId === product._id}
+                title="Changer la disponibilité"
+                className={`h-11 rounded-full px-4 text-xs font-semibold disabled:opacity-50 ${isAvailable ? "bg-green-50 text-green-800" : "bg-red-50 text-brand-dark"}`}
+              >
+                {isAvailable ? "Disponible" : "Épuisée"}
+              </button>
+              <div className="flex">
+                <Link href={'/admin/products/edit/' + product._id} aria-label={`Modifier ${product.title}`} className="flex h-11 w-11 items-center justify-center rounded-full text-muted hover:bg-paper hover:text-ink">
+                  <Pencil size={18} />
+                </Link>
+                <button onClick={() => deleteProduct(product)} aria-label={`Supprimer ${product.title}`} className="flex h-11 w-11 items-center justify-center rounded-full text-muted hover:bg-paper hover:text-brand">
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

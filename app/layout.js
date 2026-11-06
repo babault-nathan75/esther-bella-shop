@@ -1,54 +1,57 @@
 // app/layout.js
 import "./globals.css";
-import { Montserrat, Playfair_Display } from "next/font/google";
+import { SITE_URL } from "@/lib/site";
+import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Manrope, Playfair_Display, Allura } from "next/font/google";
 
-const montserrat = Montserrat({ 
+const manrope = Manrope({
   subsets: ["latin"],
-  weight: ["400", "700", "900"],
-  variable: "--font-montserrat"
+  variable: "--font-body"
 });
 
-const playfair = Playfair_Display({ 
+const playfair = Playfair_Display({
   subsets: ["latin"],
-  weight: ["400", "700"],
-  style: ["italic"],
-  variable: "--font-playfair"
+  weight: ["600", "700", "900"],
+  variable: "--font-display"
 });
+
+const allura = Allura({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-script-face"
+});
+
+export const viewport = {
+  themeColor: "#000000",
+};
 
 // --- CONFIGURATION SEO AVANCÉE (MISE À JOUR VERCEL) ---
 export const metadata = {
-  metadataBase: new URL('https://esther-bella-shop.vercel.app'), 
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Esther Bella Fashion | Luxe & Haute Couture Abidjan",
-    template: "%s | Esther Bella Fashion"
+    default: "Esther Bella Shop | Boutique de mode femme à Abidjan",
+    template: "%s | Esther Bella Shop"
   },
-  description: "Découvrez l'univers d'Esther Bella Fashion, la référence du luxe à Abidjan. Robes de soirée exclusives, prêt-à-porter haute couture et pièces de prestige pour Queens & Kings.",
+  description: "Esther Bella Shop à Abidjan : nouveaux arrivages en stock, tenues à confectionner et livraison dans les communes d'Abidjan.",
   keywords: [
-    "Esther Bella Fashion", 
+    "Esther Bella Shop",
     "Esther Bella Abidjan",
-    "Mode de luxe Abidjan", 
-    "Haute couture Côte d'Ivoire", 
-    "Maison de couture Abidjan", 
-    "Robes de soirée prestige", 
-    "EBF Boutique Luxe",
-    "Vetements haut de gamme Abidjan",
-    "Créations exclusives Esther Bella",
-    "Fashion designer Abidjan",
-    "Showroom Esther Bella",
-    "Mode africaine de luxe",
-    "Prêt-à-porter haut de gamme",
-    "Tenues de gala Abidjan",
-    "Accessoires de mode luxe",
+    "Boutique de mode Abidjan",
+    "Robes Abidjan",
+    "Tenues sur mesure Abidjan",
     "Couture sur mesure Abidjan",
-    "Friperie de luxe Abidjan",
-    "Mode éthique Abidjan",
-    "Collections exclusives Esther Bella",
-    "Tendances mode luxe Afrique",
+    "Nouveaux arrivages mode Abidjan",
+    "Mode femme Côte d'Ivoire",
+    "Friperie Abidjan",
+    "Boutique vêtements femme Abidjan",
+    "Acheter robe en ligne Abidjan",
+    "Livraison vêtements Abidjan",
+    "Tenue sur mesure Côte d'Ivoire",
     "Friperie",
   ],
-  authors: [{ name: "Esther Bella Fashion" }],
-  creator: "Esther Bella Fashion",
-  publisher: "Esther Bella Fashion",
+  authors: [{ name: "Esther Bella Shop" }],
+  creator: "Esther Bella Shop",
+  publisher: "Esther Bella Shop",
   formatDetection: {
     email: false,
     address: true,
@@ -56,16 +59,16 @@ export const metadata = {
   },
   // Social Media (OpenGraph) - Optimisé pour WhatsApp/Instagram/Facebook
   openGraph: {
-    title: "Esther Bella Fashion | L'Art du Prestige à Abidjan",
-    description: "L'élégance redéfinie à travers des créations uniques. Explorez nos collections exclusives.",
-    url: 'https://esther-bella-shop.vercel.app',
-    siteName: 'Esther Bella Fashion',
+    title: "Esther Bella Shop | Mode féminine à Abidjan",
+    description: "Nouveaux arrivages en stock et tenues à confectionner, livrés à Abidjan.",
+    url: SITE_URL,
+    siteName: 'Esther Bella Shop',
     images: [
       {
-        url: '/logo.jpg', // Utilise votre logo comme image de partage par défaut
-        width: 800,
-        height: 800,
-        alt: 'Maison Esther Bella Fashion Luxe',
+        url: '/brand/og.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Logo Esther Bella Shop',
       },
     ],
     locale: 'fr_FR',
@@ -73,9 +76,9 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Esther Bella Fashion Boutique',
-    description: 'Le luxe absolu à Abidjan.',
-    images: ['/logo.jpg'],
+    title: 'Esther Bella Shop',
+    description: 'Nouveaux arrivages et tenues à confectionner à Abidjan.',
+    images: ['/brand/og.jpg'],
   },
   robots: {
     index: true,
@@ -92,9 +95,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="fr" className={`scroll-smooth ${montserrat.variable} ${playfair.variable}`}>
-      <body className={`${montserrat.className} bg-white antialiased`}>
+    <html lang="fr" className={`scroll-smooth ${manrope.variable} ${playfair.variable} ${allura.variable}`}>
+      <body className="bg-white antialiased">
         {children}
+        <SpeedInsights /> 
       </body>
     </html>
   );

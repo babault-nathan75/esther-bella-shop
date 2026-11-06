@@ -1,279 +1,297 @@
 "use client";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { CartContext } from "@/context/CartContext";
-import { ChevronLeft, Send, MapPin, User, Loader2, CheckCircle2, Wallet, AlertCircle } from "lucide-react";
+import { useCatalog } from "@/context/CatalogContext";
+import { AlertCircle, ArrowRight, Check, ChevronLeft, Loader2, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
+import CheckoutSteps from "@/components/CheckoutSteps";
+import Media from "@/components/Media";
+import { DEPOSIT_CHANNELS, DEPOSIT_MINIMUM, DEPOSIT_PHONE, depositWhatsApp } from "@/lib/contact";
+import { PAYMENT_METHODS, formatPrice, isOrderable } from "@/lib/shop";
+
+const DRAFT_KEY = "eb_checkout";
+const EMPTY_FORM = { name: "", phone: "", zoneId: "", customCity: "", address: "", paymentMethod: PAYMENT_METHODS[0] };
+
+function Section({ number, title, children }) {
+  return (
+    <section className="rounded-2xl border border-line bg-white p-5 shadow-sm md:p-6">
+      <h2 className="mb-5 flex items-center gap-3 font-serif text-xl font-semibold">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink font-sans text-sm font-bold text-white">{number}</span>
+        {title}
+      </h2>
+      <div className="space-y-4">{children}</div>
+    </section>
+  );
+}
+
+function OrderPlaced({ order }) {
+  const steps = [
+    `Faites un dépôt d'au moins ${DEPOSIT_MINIMUM} sur ${DEPOSIT_CHANNELS} au ${DEPOSIT_PHONE}.`,
+    "Faites une capture d'écran du dépôt.",
+    `Envoyez-la à ce même numéro avec votre numéro de commande.`,
+  ];
+  return (
+    <div className="bg-paper">
+      <div className="mx-auto max-w-2xl px-4 py-8 pb-24 md:py-12">
+        <CheckoutSteps current={2} />
+        <div className="overflow-hidden rounded-3xl border border-line bg-white shadow-sm">
+          <div className="bg-ink p-7 text-center text-white">
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand"><Check size={28} /></span>
+            <h1 className="mt-4 font-serif text-3xl font-bold md:text-4xl">Merci, commande reçue</h1>
+            <p className="mt-3 text-sm text-white/70">Votre numéro de commande</p>
+            <p className="mt-1 text-3xl font-bold tracking-wider">{order.orderNumber}</p>
+          </div>
+
+          <div className="p-5 md:p-7">
+            <div className="rounded-2xl border-l-4 border-brand bg-red-50 p-4">
+              <h2 className="font-semibold">Votre commande n&apos;est pas encore confirmée</h2>
+              <ol className="mt-3 space-y-2 text-sm">
+                {steps.map((step, index) => (
+                  <li key={step} className="flex gap-2.5">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">{index + 1}</span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <a href={depositWhatsApp(order.orderNumber)} target="_blank" rel="noopener noreferrer" className="mt-4 flex h-13 items-center justify-center gap-2 rounded-xl bg-green-700 font-semibold text-white hover:bg-green-800">
+              <MessageCircle size={20} /> Envoyer ma capture sur WhatsApp
+            </a>
+            <Link href="/confirmation" className="mt-1 flex min-h-11 items-center justify-center text-sm font-semibold text-brand hover:underline">
+              Voir la page Confirmation
+            </Link>
+            <Link href={`/suivi?commande=${order.orderNumber}`} className="flex min-h-11 items-center justify-center text-sm font-semibold hover:text-brand">
+              Suivre ma commande
+            </Link>
+
+            <dl className="mt-4 space-y-2 border-t border-line pt-4 text-sm">
+              <div className="flex justify-between gap-4"><dt className="text-muted">Livraison à {order.city}</dt><dd className="font-medium">{order.shippingPending ? "À confirmer" : formatPrice(order.shippingCost)}</dd></div>
+              <div className="flex justify-between gap-4"><dt className="text-muted">Paiement</dt><dd className="font-medium">{order.paymentMethod}</dd></div>
+              <div className="flex justify-between gap-4 border-t border-line pt-3 text-lg font-bold"><dt>{order.shippingPending ? "Total hors livraison" : "Total"}</dt><dd>{formatPrice(order.total)}</dd></div>
+            </dl>
+
+            <Link href="/nouveautes" className="mt-4 flex min-h-11 items-center justify-center text-sm font-medium text-muted hover:text-ink">
+              Continuer mes achats
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function CheckoutPage() {
-  const { cartProducts, clearCart } = useContext(CartContext);
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [city, setCity] = useState("Abobo");
-  const [customCity, setCustomCity] = useState(""); 
-  const [address, setAddress] = useState("");
+  const { cartProducts, clearCart, ready } = useContext(CartContext);
+  const { zones } = useCatalog();
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [draftLoaded, setDraftLoaded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [orderId, setOrderId] = useState(null);
-  const [errorStock, setErrorStock] = useState(""); // --- NOUVEL ÉTAT POUR L'ERREUR ---
+  const [confirmation, setConfirmation] = useState(null);
+  const [error, setError] = useState("");
 
-  const WHATSAPP_NUMBER = "22587335847"; 
+  // Le formulaire survit à un aller-retour vers le panier, jusqu'à la validation de la commande
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (saved) setForm({ ...EMPTY_FORM, ...saved });
+    } catch {
+      // Brouillon illisible ou stockage bloqué : on repart d'un formulaire vide
+    }
+    setDraftLoaded(true);
+  }, []);
 
-  const subtotal = cartProducts.reduce((acc, item) => acc + (item.price || 0), 0);
-  const isCustomShipping = city === "Autre";
-  const shippingCost = isCustomShipping ? 0 : 1500;
-  const total = subtotal + shippingCost;
-  const shippingLabel = isCustomShipping ? "À confirmer" : `${shippingCost.toLocaleString()} FCFA`;
+  useEffect(() => {
+    if (!draftLoaded || confirmation) return;
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+    } catch {
+      // Stockage bloqué : le formulaire fonctionne quand même, sans brouillon
+    }
+  }, [form, draftLoaded, confirmation]);
+
+  const update = (field) => (event) => setForm((prev) => ({ ...prev, [field]: event.target.value }));
+
+  const zone = zones.find((z) => z._id === form.zoneId);
+  const isOther = form.zoneId === "other";
+  // Un lieu enregistré puis retiré par l'admin ne reste pas sélectionné
+  const zoneValue = zone || isOther ? form.zoneId : "";
+  const subtotal = cartProducts.reduce((sum, item) => sum + (item.price || 0), 0);
+  const total = subtotal + (zone?.price || 0);
+  const hasSoldOut = cartProducts.some((item) => !isOrderable(item));
 
   const handleCheckout = async (e) => {
     e.preventDefault();
-    setErrorStock(""); // Réinitialise l'erreur au clic
+    setError("");
 
-    const finalCity = city === "Autre" ? customCity : city;
-
-    if (!name || !phone || !address || (city === "Autre" && !customCity)) {
-      alert("Veuillez remplir toutes vos coordonnées, Queen 👸");
+    if (hasSoldOut) {
+      setError("Une pièce de votre panier vient d'être épuisée. Retirez-la depuis le panier.");
+      return;
+    }
+    if (!zoneValue || (isOther && !form.customCity.trim())) {
+      setError("Merci d'indiquer votre lieu de livraison.");
       return;
     }
 
     setIsProcessing(true);
-
     try {
-      // --- MODIFICATION CRUCIALE POUR ÉVITER L'ERREUR 500 ---
-      // Nettoyage strict des produits : on s'assure que _id est présent et que price est un nombre
-      const cleanedProducts = cartProducts.map(p => ({
-        _id: p._id, 
-        title: p.title,
-        price: Number(p.price),
-        images: p.images || [],
-        selectedSize: p.selectedSize || "Unique"
-      }));
-
-      // 1. Enregistrement de la commande avec forçage du type Number pour le total
-      const response = await axios.post('/api/checkout', {
-        name,
-        phone,
-        city: finalCity,
-        address,
-        cartProducts: cleanedProducts,
-        total: Number(total),
-        shippingCost,
-        shippingPending: isCustomShipping,
+      const { data } = await axios.post('/api/checkout', {
+        ...form,
+        items: cartProducts.map(({ _id, selectedSize, notes }) => ({ _id, selectedSize, notes })),
       });
-
-      const newOrderId = response.data.id || response.data._id;
-      setOrderId(newOrderId);
-
-      // 2. Préparation du message WhatsApp (Seulement si l'API a validé)
-      const shippingLine = isCustomShipping
-        ? `Livraison : à confirmer (hors-zone Abidjan)`
-        : `Livraison : ${shippingCost.toLocaleString()} FCFA`;
-
-      const totalLine = isCustomShipping
-        ? `*TOTAL PRODUITS : ${subtotal.toLocaleString()} FCFA* (Montant de la livraison à confirmer)`
-        : `*TOTAL : ${total.toLocaleString()} FCFA*\n*(Produits: ${subtotal.toLocaleString()} | ${shippingLine})*`;
-
-      const message = `Bonjour Esther Bella Fashion ✨\n\n` +
-        `Nouvelle commande de *${name}*\n` +
-        `Commande N°: #${newOrderId.substring(0, 8)}\n\n` +
-        `*DÉTAILS :*\n` +
-        cartProducts.map(p => `- ${p.title} (${p.selectedSize || 'Unique'})`).join('\n') +
-        `\n\n${totalLine}\n\n` +
-        `*LIVRAISON :* ${finalCity}, ${address}\n` +
-        `*CONTACT :* ${phone}\n\n` +
-        `Merci de confirmer la commande. 👸👑`;
-
-      const encodedMessage = encodeURIComponent(message);
-      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
-
-      window.open(whatsappUrl, "_blank");
+      setConfirmation(data);
       clearCart();
-
-    } catch (error) {
-      // --- GESTION AMÉLIORÉE DES ERREURS (400 ET 500) ---
-      const errorMsg = error.response?.data?.error || "Une erreur serveur est survenue lors de la validation.";
-      setErrorStock(errorMsg);
-      
-      // On remonte la page pour que la cliente voie le bandeau d'erreur
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      console.error("Détails de l'erreur:", error.response?.data || error.message);
+      try {
+        localStorage.removeItem(DRAFT_KEY);
+      } catch {
+        // Stockage bloqué : rien à effacer
+      }
+      window.scrollTo({ top: 0 });
+    } catch (err) {
+      setError(err.response?.data?.error || "Connexion impossible. Votre panier est conservé, merci de réessayer.");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  if (cartProducts.length === 0 && !orderId) {
-    return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center px-6 font-montserrat text-center">
-        <h2 className="text-3xl font-serif italic text-black mb-4">Votre panier est vide</h2>
-        <p className="text-gray-400 text-[10px] uppercase tracking-[0.3em] mb-10">Ajoutez une pièce avant de finaliser</p>
-        <Link href="/shop" className="bg-black text-white px-12 py-4 rounded-full font-black uppercase text-xs tracking-[0.3em] hover:bg-yellow-600 hover:text-black transition-all shadow-2xl">
-          Découvrir la Collection
-        </Link>
-      </div>
-    );
-  }
+  if (confirmation) return <OrderPlaced order={confirmation} />;
 
-  if (orderId) {
+  if (!ready) return <div className="min-h-[60vh]" />;
+
+  if (cartProducts.length === 0) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-6 text-center animate-in fade-in duration-700 font-montserrat">
-        <div className="max-w-md w-full border border-yellow-600/20 p-10 rounded-[3rem] shadow-2xl bg-black text-white">
-          <CheckCircle2 className="mx-auto text-yellow-600 mb-6 animate-bounce" size={60} />
-          <h2 className="text-3xl font-serif italic mb-4">Commande Reçue</h2>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-white/50 mb-10 leading-loose">
-            Votre commande <span className="text-white font-bold">#{orderId.substring(0, 8)}</span> a été transmise.
-            <br />
-            Conservez ce numéro pour le suivi.
-          </p>
-          <div className="space-y-4">
-            <div className="p-4 bg-white/5 rounded-2xl border border-white/10 text-left">
-                <p className="text-[10px] text-yellow-600 uppercase font-black mb-2">Prochaine étape</p>
-                <p className="text-[11px] leading-relaxed text-zinc-300">Vérifiez votre WhatsApp. Notre équipe valide le paiement avec vous.</p>
-            </div>
-            <Link href="/" className="block w-full text-white/40 pt-6 text-[10px] uppercase tracking-widest hover:text-white transition">
-              Retour à l&apos;accueil
-            </Link>
-          </div>
-        </div>
+      <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
+        <h1 className="font-serif text-3xl font-bold">Votre panier est vide</h1>
+        <Link href="/shop" className="mt-6 inline-flex h-12 items-center rounded-full bg-brand px-7 font-semibold text-white hover:bg-brand-dark">
+          Voir le prêt à porter
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-20 font-montserrat">
-      <div className="max-w-4xl mx-auto px-6 py-12 text-center">
-        
-        <Link href="/cart" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] mb-10 hover:text-yellow-600 transition">
-          <ChevronLeft size={16} /> Retour au panier
+    <div className="bg-paper">
+      <form onSubmit={handleCheckout} className="mx-auto max-w-6xl px-4 pb-32 pt-6 md:px-6 md:py-10">
+        <CheckoutSteps current={1} />
+        <Link href="/cart" className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-medium text-muted hover:text-ink">
+          <ChevronLeft size={18} /> Retour au panier
         </Link>
+        <h1 className="mb-6 mt-1 font-serif text-4xl font-bold md:text-5xl">Finaliser la commande</h1>
 
-        {/* --- BANDEAU D'ERREUR DYNAMIQUE --- */}
-        {errorStock && (
-          <div className="max-w-2xl mx-auto mb-10 bg-red-50 border border-red-100 p-5 rounded-2xl flex items-center gap-4 text-red-600 animate-in slide-in-from-top-4 duration-500">
-            <AlertCircle size={24} className="flex-shrink-0" />
-            <div className="text-left">
-              <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed">
-                Alerte : {errorStock}
-              </p>
-              <p className="text-[9px] uppercase mt-1 opacity-70">Veuillez vérifier vos articles ou vos informations.</p>
-            </div>
-          </div>
-        )}
-
-        <h1 className="text-4xl md:text-6xl font-black text-black uppercase tracking-tighter mb-12">
-          Finaliser <span className="font-serif italic text-yellow-600 lowercase font-light">l&apos;achat</span>
-        </h1>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <div className="space-y-8">
-            <section className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] mb-8 flex items-center gap-2 text-black text-left">
-                <User size={16} className="text-yellow-600" /> Vos Coordonnées
-              </h2>
-              <div className="space-y-6">
-                <input 
-                  type="text" required placeholder="NOM COMPLET" value={name} onChange={e => setName(e.target.value)}
-                  className="w-full bg-gray-50 border-none rounded-xl p-4 text-xs font-bold tracking-widest outline-none focus:ring-2 focus:ring-yellow-600/20 transition-all"
-                />
-                <input 
-                  type="tel" required placeholder="NUMÉRO DE TÉLÉPHONE" value={phone} onChange={e => setPhone(e.target.value)}
-                  className="w-full bg-gray-50 border-none rounded-xl p-4 text-xs font-bold tracking-widest outline-none focus:ring-2 focus:ring-yellow-600/20 transition-all"
-                />
-              </div>
-            </section>
-
-            <section className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] mb-8 flex items-center gap-2 text-black text-left">
-                <MapPin size={16} className="text-yellow-600" /> Livraison
-              </h2>
-              <div className="space-y-4">
-                <select 
-                  className="w-full bg-gray-50 border-none rounded-xl p-4 text-[10px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-yellow-600/20 transition-all"
-                  value={city} onChange={e => setCity(e.target.value)}
-                >
-                  <option value="Abobo">Abobo</option>
-                  <option value="Adjamé">Adjamé</option>
-                  <option value="Cocody">Cocody</option>
-                  <option value="Koumassi">Koumassi</option>
-                  <option value="Marcory">Marcory</option>
-                  <option value="Plateau">Plateau</option>
-                  <option value="Treichville">Treichville</option>
-                  <option value="Yopougon">Yopougon</option>
-                  <option value="Autre">Autre (Précisez...)</option>
-                </select>
-
-                {city === "Autre" && (
-                  <div className="animate-in slide-in-from-top-2 duration-300 text-left">
-                    <input 
-                      type="text" placeholder="NOM DE VOTRE VILLE" value={customCity} onChange={e => setCustomCity(e.target.value)}
-                      className="w-full bg-yellow-600/5 border border-yellow-600/20 rounded-xl p-4 text-xs font-bold tracking-widest outline-none focus:ring-2 focus:ring-yellow-600/40"
-                    />
-                    <p className="text-[9px] text-yellow-600 mt-2 uppercase tracking-widest font-bold">* Tarif hors-zone : le prix de la livraison vous sera communiqué lorsque votre commande sera confirmée</p>
-                  </div>
-                )}
-
-                <textarea 
-                  placeholder="PRÉCISIONS (QUARTIER, IMMEUBLE...)" value={address} onChange={e => setAddress(e.target.value)}
-                  className="w-full bg-gray-50 border-none rounded-xl p-4 text-xs font-bold tracking-widest outline-none focus:ring-2 focus:ring-yellow-600/20 h-28 resize-none transition-all"
-                ></textarea>
-              </div>
-            </section>
-          </div>
-
-          <div className="space-y-8">
-            <div className="bg-black text-white p-8 rounded-[2rem] shadow-2xl border border-white/5">
-              <h3 className="font-serif italic text-2xl text-yellow-600 mb-8 text-left">Votre Commande</h3>
-              <div className="space-y-4 mb-8 max-h-48 overflow-y-auto pr-2">
-                {cartProducts.map(item => (
-                  <div key={item.cartId} className="flex justify-between items-center text-[10px] uppercase tracking-widest border-b border-white/5 pb-4 opacity-70">
-                    <span className="text-left">{item.title}</span>
-                    <span className="font-bold">{item.price?.toLocaleString()} FCFA</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-4 pt-4 border-t border-white/10">
-                <div className="flex justify-between text-[10px] uppercase tracking-[0.2em] text-white/40">
-                  <span>Sous-total</span>
-                  <span className="text-white">{subtotal.toLocaleString()} FCFA</span>
+        <div className="grid items-start gap-6 lg:grid-cols-[1fr_380px]">
+          <div className="space-y-4">
+            <Section number={1} title="Vos coordonnées">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="name" className="mb-1 block text-sm font-medium">Nom complet</label>
+                  <input id="name" required autoComplete="name" value={form.name} onChange={update("name")} className="field" />
                 </div>
-                <div className="flex justify-between text-[10px] uppercase tracking-[0.2em] text-white/40">
-                  <span>Livraison</span>
-                  <span className={isCustomShipping ? "text-yellow-600" : "text-white"}>{shippingLabel}</span>
+                <div>
+                  <label htmlFor="phone" className="mb-1 block text-sm font-medium">Téléphone</label>
+                  <input id="phone" type="tel" required autoComplete="tel" inputMode="tel" placeholder="07 00 00 00 00" value={form.phone} onChange={update("phone")} className="field" />
                 </div>
-                <div className="flex justify-between items-end pt-4">
-                  <span className="text-[10px] font-black uppercase text-yellow-600 tracking-[0.3em]">
-                    {isCustomShipping ? "Total Produits" : "Total TTC"}
-                  </span>
-                  <span className="text-3xl font-black tracking-tighter">
-                    {(isCustomShipping ? subtotal : total).toLocaleString()} FCFA
-                  </span>
-                </div>
-                {isCustomShipping && (
-                  <p className="text-[9px] text-yellow-600/70 uppercase tracking-widest pt-2 italic">
-                    Le tarif de livraison sera ajouté lors de la confirmation
-                  </p>
-                )}
               </div>
+            </Section>
 
-              <button 
-                onClick={handleCheckout}
-                disabled={isProcessing}
-                className="w-full mt-10 bg-yellow-600 text-black h-16 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-white transition-all shadow-xl disabled:opacity-50"
-              >
-                {isProcessing ? <Loader2 className="animate-spin" /> : <>Valider la commande <Send size={16} /></>}
-              </button>
-            </div>
-            
-            <div className="bg-white border border-yellow-600/20 p-6 rounded-2xl flex items-center gap-4 shadow-sm text-left">
-              <Wallet className="text-yellow-600" size={24} />
+            <Section number={2} title="Livraison">
               <div>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-black">Paiement Sécurisé</h4>
-                <p className="text-[9px] text-gray-400 uppercase">Orange Money • Wave • Espèces</p>
+                <label htmlFor="zone" className="mb-1 block text-sm font-medium">Lieu de livraison</label>
+                <select id="zone" required value={zoneValue} onChange={update("zoneId")} className="field">
+                  <option value="" disabled>Choisir un lieu</option>
+                  {zones.map((z) => (
+                    <option key={z._id} value={z._id}>{z.name} : {formatPrice(z.price)}</option>
+                  ))}
+                  <option value="other">Autre lieu (tarif à confirmer)</option>
+                </select>
               </div>
-            </div>
+              {isOther && (
+                <div>
+                  <label htmlFor="customCity" className="mb-1 block text-sm font-medium">Votre ville ou commune</label>
+                  <input id="customCity" required value={form.customCity} onChange={update("customCity")} className="field" />
+                  <p className="mt-1 text-sm text-muted">Nous vous communiquerons le tarif au moment de la confirmation.</p>
+                </div>
+              )}
+              <div>
+                <label htmlFor="address" className="mb-1 block text-sm font-medium">Quartier et repère</label>
+                <textarea id="address" required rows={2} autoComplete="street-address" value={form.address} onChange={update("address")} className="field resize-none" />
+              </div>
+            </Section>
+
+            <Section number={3} title="Mode de paiement">
+              <fieldset className="grid gap-2 sm:grid-cols-2">
+                <legend className="sr-only">Mode de paiement</legend>
+                {PAYMENT_METHODS.map((method) => (
+                  <label key={method} className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 text-sm font-medium transition-colors ${form.paymentMethod === method ? "border-brand bg-red-50" : "border-line hover:border-ink"}`}>
+                    <input type="radio" name="payment" value={method} checked={form.paymentMethod === method} onChange={update("paymentMethod")} className="h-4 w-4 accent-[var(--color-brand)]" />
+                    {method}
+                  </label>
+                ))}
+              </fieldset>
+            </Section>
+          </div>
+
+          <div className="space-y-3 lg:sticky lg:top-28">
+            <aside className="rounded-2xl bg-ink p-5 text-white md:p-6">
+              <h2 className="mb-4 font-serif text-2xl font-semibold">Récapitulatif</h2>
+              <ul className="space-y-3 border-b border-white/15 pb-4 text-sm">
+                {cartProducts.map((item) => (
+                  <li key={item.cartId} className="flex items-center gap-3">
+                    <div className="h-16 w-12 shrink-0 overflow-hidden rounded-lg bg-white/10">
+                      <Media src={item.images?.[0]} alt="" className="h-full w-full object-cover" />
+                    </div>
+                    <span className={`min-w-0 flex-1 ${isOrderable(item) ? "" : "text-white/50 line-through"}`}>
+                      {item.title}
+                      {item.selectedSize && <span className="block text-xs text-white/60">{item.selectedSize}</span>}
+                    </span>
+                    <span className="shrink-0 font-medium">{formatPrice(item.price)}</span>
+                  </li>
+                ))}
+              </ul>
+              <dl className="mt-4 space-y-2 text-sm">
+                <div className="flex justify-between"><dt className="text-white/70">Sous-total</dt><dd>{formatPrice(subtotal)}</dd></div>
+                <div className="flex justify-between">
+                  <dt className="text-white/70">Livraison</dt>
+                  <dd>{zone ? formatPrice(zone.price) : isOther ? "À confirmer" : "Choisir un lieu"}</dd>
+                </div>
+                <div className="flex items-end justify-between border-t border-white/15 pt-3">
+                  <dt className="font-semibold">{isOther ? "Total hors livraison" : "Total"}</dt>
+                  <dd className="text-2xl font-bold">{formatPrice(total)}</dd>
+                </div>
+              </dl>
+
+              {error && (
+                <p role="alert" className="mt-4 hidden lg:flex gap-2 rounded-xl bg-red-50 p-3 text-sm text-brand-dark">
+                  <AlertCircle size={18} className="shrink-0" /> {error}
+                </p>
+              )}
+
+              <button disabled={isProcessing} className="group mt-5 hidden h-13 w-full items-center lg:flex justify-center gap-2 rounded-xl bg-brand font-semibold transition-colors hover:bg-brand-dark disabled:opacity-60">
+                {isProcessing
+                  ? <><Loader2 size={18} className="animate-spin" /> Envoi en cours…</>
+                  : <>Valider ma commande <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" /></>}
+              </button>
+            </aside>
+
+            <p className="rounded-2xl border-l-4 border-brand bg-white p-4 text-sm leading-relaxed shadow-sm">
+              Pour que votre commande soit confirmée, suivez les indications de cette page :{" "}
+              <Link href="/confirmation" className="font-semibold text-brand underline">Confirmation</Link>
+            </p>
           </div>
         </div>
-      </div>
+
+        {/* Mobile : total et validation toujours à portée de pouce */}
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-10px_30px_rgba(0,0,0,0.1)] backdrop-blur-md lg:hidden">
+          {error && <p role="alert" className="mb-2 rounded-lg bg-red-50 p-2 text-sm text-brand-dark">{error}</p>}
+          <div className="flex items-center gap-3">
+            <p className="shrink-0"><span className="block text-xs text-muted">{isOther ? "Hors livraison" : "Total"}</span><strong className="text-lg">{formatPrice(total)}</strong></p>
+            <button disabled={isProcessing} className="flex h-13 flex-1 items-center justify-center gap-2 rounded-full bg-brand font-semibold text-white active:scale-[0.98] disabled:opacity-60">
+              {isProcessing ? <Loader2 size={18} className="animate-spin" /> : "Valider"}
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   );
 }

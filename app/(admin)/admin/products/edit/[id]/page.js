@@ -11,7 +11,7 @@ import { notFound } from "next/navigation";
 export default async function EditProductPage({ params }) {
   await connectToDB();
   const { id } = await params;
-  
+
   let productDoc;
   try {
     productDoc = await Product.findById(id);
@@ -25,18 +25,11 @@ export default async function EditProductPage({ params }) {
   const productInfo = JSON.parse(JSON.stringify(productDoc));
 
   return (
-    <div className="max-w-5xl mx-auto py-10 px-6">
-      <Link href="/admin/products" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] mb-10 text-gray-400 hover:text-black transition-all">
-        <ChevronLeft size={16} /> Retour à l&apos;inventaire
+    <div>
+      <Link href="/admin/products" className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-medium text-muted hover:text-ink">
+        <ChevronLeft size={18} /> Tenues
       </Link>
-
-      <header className="mb-12">
-        <h1 className="text-4xl font-black text-black uppercase tracking-tighter">
-          Modifier la <span className="font-serif italic text-yellow-600 font-light lowercase">Création</span>
-        </h1>
-        <p className="text-[10px] text-gray-300 uppercase tracking-widest mt-2">ID: {productInfo._id}</p>
-      </header>
-
+      <h1 className="mb-6 mt-1 font-serif text-3xl font-bold">Modifier la tenue</h1>
       <ProductForm {...productInfo} />
     </div>
   );
