@@ -1,6 +1,7 @@
 import Link from "next/link";
+import BackLink from "@/components/BackLink";
 import DeliveryRates from "@/components/DeliveryRates";
-import { Truck, RefreshCw, ChevronLeft } from "lucide-react";
+import { Truck, RefreshCw } from "lucide-react";
 
 export const metadata = {
   title: "Livraison & Retours",
@@ -11,9 +12,7 @@ export default function LivraisonRetoursPage() {
   return (
     <main className="bg-black text-white min-h-screen">
       <header className="border-b border-white/15 py-14 md:py-20 px-6 text-center">
-        <Link href="/shop" className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-white/70 hover:text-brand transition mb-10">
-          <ChevronLeft size={14} /> Retour aux collections
-        </Link>
+        <BackLink className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-white/70 hover:text-brand transition mb-10" />
         <p className="text-xs uppercase tracking-wider text-white/70 mb-6">Modalités</p>
         <h1 className="text-5xl md:text-7xl font-bold font-serif">
           Livraison <br/> & Retours

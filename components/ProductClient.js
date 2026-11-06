@@ -2,7 +2,8 @@
 import { useContext, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Check, ChevronDown, ChevronLeft, Clock, Ruler, Share2, ShieldCheck, ShoppingBag, Truck, Wallet } from "lucide-react";
+import { Check, ChevronDown, Clock, Ruler, Share2, ShieldCheck, ShoppingBag, Truck, Wallet } from "lucide-react";
+import BackLink from "@/components/BackLink";
 import Media from "@/components/Media";
 import ClawPoster, { hasPoster } from "@/components/ClawPoster";
 import ProductCard from "@/components/ProductCard";
@@ -34,8 +35,14 @@ export default function ProductClient({ product: initialProduct }) {
   const otherColors = showPoster && product.poster.collection
     ? products.filter((p) => p._id !== product._id && hasPoster(p) && isOrderable(p) && p.poster.collection === product.poster.collection)
     : [];
-  const lowestDelivery = zones.length ? Math.min(...zones.map((z) => z.price)) : null;
   const category = categories.find((c) => c._id === product.category);
+  // Arrivée directe (Google, WhatsApp) : le retour mène à l'univers de la tenue
+  const fallback = isNewArrival(product) ? { href: "/nouveautes", label: "Nouveautés" }
+    : confection ? { href: "/confection", label: "Sur commande" }
+    : isStockListed(product) ? { href: "/en-stock", label: "En stock" }
+    : category ? { href: `/category/${category._id}`, label: category.name }
+    : { href: "/shop", label: "Prêt à porter" };
+  const lowestDelivery = zones.length ? Math.min(...zones.map((z) => z.price)) : null;
   const related = (soldOut ? newestInStock(products) : products.filter((p) => p.category === product.category && isOrderable(p)))
     .filter((p) => p._id !== product._id)
     .slice(0, 4);
@@ -81,9 +88,11 @@ export default function ProductClient({ product: initialProduct }) {
   return (
     <div className="relative mx-auto max-w-7xl px-4 pb-32 md:px-6 md:pb-16 md:pt-4">
       <div className="absolute inset-x-3 top-3 z-20 flex items-center justify-between md:static md:mb-4">
-        <Link href={category ? `/category/${category._id}` : "/shop"} className="inline-flex min-h-11 items-center gap-1 rounded-full bg-white/90 px-3 text-sm font-medium shadow-md backdrop-blur-sm hover:text-brand md:-ml-2 md:bg-transparent md:px-2 md:text-muted md:shadow-none">
-          <ChevronLeft size={18} /> {category?.name || "Boutique"}
-        </Link>
+        <BackLink
+          fallbackHref={fallback.href}
+          fallbackLabel={fallback.label}
+          className="inline-flex min-h-11 items-center gap-1 rounded-full bg-white/90 px-3 text-sm font-medium shadow-md backdrop-blur-sm hover:text-brand md:-ml-2 md:bg-transparent md:px-2 md:text-muted md:shadow-none"
+        />
         <button onClick={shareProduct} aria-label="Partager" className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-sm hover:bg-paper md:bg-transparent md:shadow-none">
           <Share2 size={20} />
         </button>

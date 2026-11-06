@@ -29,10 +29,10 @@ export const viewport = {
 export const metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Esther Bella Shop | Boutique de mode femme à Abidjan",
+    default: "Esther Bella Shop | Boutique de mode feminine",
     template: "%s | Esther Bella Shop"
   },
-  description: "Esther Bella Shop à Abidjan : nouveaux arrivages en stock, tenues à confectionner et livraison dans les communes d'Abidjan.",
+  description: "Esther Bella Shop : nouveaux arrivages en stock, tenues à confectionner.",
   keywords: [
     "Esther Bella Shop",
     "Esther Bella Abidjan",

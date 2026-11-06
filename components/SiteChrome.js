@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Home, LayoutGrid, PackageCheck, Scissors, Search, ShoppingBag, Sparkles, X } from "lucide-react";
+import { recordNavigation } from "@/components/BackLink";
 import HeaderCount from "@/components/HeaderCount";
 import Media from "@/components/Media";
 import SearchOverlay from "@/components/SearchOverlay";
@@ -135,6 +136,7 @@ export default function SiteChrome() {
   const { zones } = useCatalog();
   const lowestDelivery = zones.length ? Math.min(...zones.map((z) => z.price)) : null;
   useVisitTracking(pathname);
+  useEffect(() => recordNavigation(pathname), [pathname]);
   const [searchOpen, setSearchOpen] = useState(false);
   useScrollToTopOnArrival(pathname);
   const closeSearch = useCallback(() => setSearchOpen(false), []);

@@ -18,8 +18,8 @@ export async function generateMetadata({ params }) {
   const category = await findCategory(id);
   if (!category) return { title: "Rubrique introuvable", robots: { index: false } };
   return {
-    title: `${category.name} femme à Abidjan`,
-    description: category.description || `${category.name} : découvrez notre sélection chez Esther Bella Shop, avec livraison à Abidjan.`,
+    title: `${category.name} femme`,
+    description: category.description || `${category.name} : découvrez notre sélection chez Esther Bella Shop.`,
     alternates: { canonical: `/category/${id}` },
   };
 }

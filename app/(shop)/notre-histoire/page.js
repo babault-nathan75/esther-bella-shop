@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Sparkles, ChevronLeft } from "lucide-react";
+import BackLink from "@/components/BackLink";
+import { Sparkles } from "lucide-react";
 
 export const metadata = {
   title: "Notre Histoire",
@@ -10,9 +11,7 @@ export default function NotreHistoirePage() {
   return (
     <main className="bg-black text-white min-h-screen">
       <header className="border-b border-white/15 py-14 md:py-20 px-6 text-center">
-        <Link href="/shop" className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-white/70 hover:text-brand transition mb-10">
-          <ChevronLeft size={14} /> Retour aux collections
-        </Link>
+        <BackLink className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-white/70 hover:text-brand transition mb-10" />
         <p className="text-xs uppercase tracking-wider text-white/70 mb-6">La Maison</p>
         <h1 className="text-5xl md:text-7xl font-bold font-serif">
           Notre Histoire

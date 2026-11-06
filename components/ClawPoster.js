@@ -44,10 +44,10 @@ const SLASHES = [
   [225, 515, 395, 130, 12],
 ].map(([x0, y0, x1, y1, width], index) => slashPath(x0, y0, x1, y1, width, index + 3));
 
-function ClawMarks({ color }) {
+function ClawMarks({ color, bold = false }) {
   return (
     <svg aria-hidden="true" viewBox="0 0 400 520" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full">
-      <g fill={color}>
+      <g fill={color} stroke={bold ? color : "none"} strokeWidth={bold ? 2.5 : 0}>
         {SLASHES.map((d) => <path key={d} d={d} />)}
       </g>
     </svg>
@@ -102,7 +102,7 @@ export function hasPoster(product) {
 export default function ClawPoster({ product, compact = false }) {
   const { collection, title, text, colorName, motif, clawColor = "#7ec8e3", backgroundColor = "#ffffff" } = product.poster;
   const ink = readableText(backgroundColor);
-  const marks = motif === "fleur" ? <FlowerMarks color={clawColor} vein={backgroundColor} /> : <ClawMarks color={clawColor} />;
+  const marks = motif === "fleur" ? <FlowerMarks color={clawColor} vein={backgroundColor} /> : <ClawMarks color={clawColor} bold={compact} />;
   const photo = (
     <div className="relative overflow-hidden rounded-2xl shadow-2xl ring-4 ring-white/70">
       <Media src={product.images?.[0]} alt={product.title} className="aspect-[3/4] w-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -116,7 +116,8 @@ export default function ClawPoster({ product, compact = false }) {
         <div className="relative">
           {collection && <p className="font-serif text-sm italic">Collection {collection}</p>}
           <h3 className="mb-3 mt-0.5 font-serif text-xl font-bold leading-tight md:text-3xl">{title || colorName || product.title}</h3>
-          {photo}
+          {/* Photo réduite : le motif reste visible tout autour */}
+          <div className="mx-auto my-5 w-[68%]">{photo}</div>
           <p className="mt-3 flex flex-wrap items-baseline justify-between gap-x-3 font-semibold">
             <span className="min-w-0 truncate text-sm">{product.title}</span>
             <span className="font-bold">{formatPrice(product.price)}</span>
