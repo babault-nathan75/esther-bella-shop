@@ -146,8 +146,8 @@ export default function ClawPoster({ product, compact = false }) {
             {collection && <p className="font-serif text-sm italic">Collection {collection}</p>}
             <h3 className="mt-0.5 font-serif text-xl font-bold leading-tight md:text-3xl">{title || colorName || product.title}</h3>
           </div>
-          {/* Photo réduite : le motif reste visible tout autour */}
-          <div className="mx-auto my-5 w-[68%]">{photo}</div>
+          {/* Photo large : le motif reste visible sur les bords */}
+          <div className="mx-auto my-4 w-[88%]">{photo}</div>
           <p className="mt-3 flex flex-wrap items-baseline justify-between gap-x-3 rounded-xl px-3 py-2 font-semibold" style={{ backgroundColor }}>
             <span className="min-w-0 truncate text-sm">{product.title}</span>
             <span className="font-bold">{formatPrice(product.price)}</span>
