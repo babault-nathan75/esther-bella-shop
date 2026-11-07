@@ -192,7 +192,7 @@ export default function ProductForm({
               <div>
                 <label htmlFor="poster-motif" className="mb-1 block text-sm font-medium">Motif de fond</label>
                 <select id="poster-motif" value={poster.motif} onChange={updatePoster("motif")} className="field">
-                  <option value="griffure">Griffures</option>
+                  <option value="griffure">Taches de panthère</option>
                   <option value="fleur">Fleurs</option>
                 </select>
               </div>

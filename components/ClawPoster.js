@@ -2,7 +2,7 @@ import Link from "next/link";
 import Media from "@/components/Media";
 import { formatPrice } from "@/lib/shop";
 
-// Griffure déchirée : queues très fines, ventre large, bords hérissés d'éclats.
+// Pelage de panthère : rosettes en anneaux brisés, cœur teinté, petites taches entre elles.
 // Tirage à graine fixe : même dessin côté serveur et navigateur.
 function randomFrom(seed) {
   let state = seed * 2654435761 % 4294967296;
@@ -12,43 +12,70 @@ function randomFrom(seed) {
   };
 }
 
-function slashPath(x0, y0, x1, y1, width, seed) {
-  const random = randomFrom(seed);
-  const steps = 150;
-  const length = Math.hypot(x1 - x0, y1 - y0);
-  const [ux, uy] = [(x1 - x0) / length, (y1 - y0) / length];
-  const [nx, ny] = [-uy, ux];
-  const belly = 0.42 + random() * 0.16;
-  const edge = (side) => {
-    const points = [];
-    for (let i = 1; i < steps; i++) {
-      const t = i / steps;
-      const profile = t < belly ? t / belly : (1 - t) / (1 - belly);
-      const half = width * profile ** 1.7;
-      // Un éclat de temps en temps, couché dans le sens du coup de griffe
-      const shard = random() < 0.16 ? 1.15 + random() * 0.55 : 0.72 + random() * 0.28;
-      const along = length * t + (shard > 1 ? length * 0.009 : 0);
-      const offset = side * half * shard;
-      points.push(`${(x0 + ux * along + nx * offset).toFixed(1)} ${(y0 + uy * along + ny * offset).toFixed(1)}`);
-    }
-    return points;
-  };
-  return `M${x0} ${y0}L${edge(1).join("L")}L${x1} ${y1}L${edge(-1).reverse().join("L")}Z`;
+function point(cx, cy, rx, ry, tilt, angle, scale) {
+  const [x, y] = [Math.cos(angle) * rx * scale, Math.sin(angle) * ry * scale];
+  return `${(cx + x * Math.cos(tilt) - y * Math.sin(tilt)).toFixed(1)} ${(cy + x * Math.sin(tilt) + y * Math.cos(tilt)).toFixed(1)}`;
 }
 
-// Un seul coup de griffe, quatre griffes : du bas à gauche vers le haut à droite
-const SLASHES = [
-  [10, 330, 170, 45, 7],
-  [40, 470, 265, 50, 14],
-  [150, 495, 345, 75, 13],
-  [225, 515, 395, 130, 12],
-].map(([x0, y0, x1, y1, width], index) => slashPath(x0, y0, x1, y1, width, index + 3));
+// Un morceau d'anneau, plus épais au milieu et irrégulier
+function arcPath(cx, cy, rx, ry, tilt, start, end, random) {
+  const steps = 7;
+  const thickness = 0.2 + random() * 0.14;
+  const outer = [];
+  const inner = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const angle = start + (end - start) * t;
+    const swell = thickness * (0.45 + Math.sin(Math.PI * t)) * (0.85 + random() * 0.3);
+    outer.push(point(cx, cy, rx, ry, tilt, angle, 1 + swell));
+    inner.unshift(point(cx, cy, rx, ry, tilt, angle, 1 - swell));
+  }
+  return `M${[...outer, ...inner].join("L")}Z`;
+}
 
-function ClawMarks({ color, bold = false }) {
+function rosette(cx, cy, random) {
+  const rx = 15 + random() * 9;
+  const ry = rx * (0.7 + random() * 0.25);
+  const tilt = random() * Math.PI;
+  const count = 3 + Math.floor(random() * 3);
+  const first = random() * Math.PI * 2;
+  const arcs = [];
+  for (let i = 0; i < count; i++) {
+    const share = (Math.PI * 2) / count;
+    const start = first + share * i + random() * 0.12;
+    arcs.push(arcPath(cx, cy, rx, ry, tilt, start, start + share * (0.62 + random() * 0.2), random));
+  }
+  return { center: { cx, cy, rx: rx * 0.72, ry: ry * 0.72, tilt: (tilt * 180) / Math.PI }, arcs };
+}
+
+function buildCoat() {
+  const random = randomFrom(11);
+  const rosettes = [];
+  const spots = [];
+  for (let row = 0; row < 9; row++) {
+    for (let col = 0; col < 7; col++) {
+      const x = col * 72 - 16 + (row % 2) * 36 + random() * 16 - 8;
+      const y = row * 64 - 8 + random() * 16 - 8;
+      rosettes.push(rosette(x, y, random));
+      spots.push({ cx: x + 36 + random() * 8, cy: y + 4 + random() * 10, r: 2.5 + random() * 3 });
+    }
+  }
+  return { rosettes, spots };
+}
+
+const COAT = buildCoat();
+
+function PantherMarks({ color }) {
   return (
     <svg aria-hidden="true" viewBox="0 0 400 520" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full">
-      <g fill={color} stroke={bold ? color : "none"} strokeWidth={bold ? 2.5 : 0}>
-        {SLASHES.map((d) => <path key={d} d={d} />)}
+      <g fill={color} stroke={color} strokeWidth="1.5" strokeLinejoin="round">
+        {COAT.rosettes.map(({ center, arcs }) => (
+          <g key={`${center.cx}-${center.cy}`}>
+            <ellipse cx={center.cx.toFixed(1)} cy={center.cy.toFixed(1)} rx={center.rx.toFixed(1)} ry={center.ry.toFixed(1)} transform={`rotate(${center.tilt.toFixed(1)} ${center.cx.toFixed(1)} ${center.cy.toFixed(1)})`} opacity="0.22" stroke="none" />
+            {arcs.map((d) => <path key={d} d={d} />)}
+          </g>
+        ))}
+        {COAT.spots.map(({ cx, cy, r }) => <circle key={`${cx}-${cy}`} cx={cx.toFixed(1)} cy={cy.toFixed(1)} r={r.toFixed(1)} stroke="none" />)}
       </g>
     </svg>
   );
@@ -102,7 +129,7 @@ export function hasPoster(product) {
 export default function ClawPoster({ product, compact = false }) {
   const { collection, title, text, colorName, motif, clawColor = "#7ec8e3", backgroundColor = "#ffffff" } = product.poster;
   const ink = readableText(backgroundColor);
-  const marks = motif === "fleur" ? <FlowerMarks color={clawColor} vein={backgroundColor} /> : <ClawMarks color={clawColor} bold={compact} />;
+  const marks = motif === "fleur" ? <FlowerMarks color={clawColor} vein={backgroundColor} /> : <PantherMarks color={clawColor} />;
   const photo = (
     <div className="relative overflow-hidden rounded-2xl shadow-2xl ring-4 ring-white/70">
       <Media src={product.images?.[0]} alt={product.title} className="aspect-[3/4] w-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -114,11 +141,14 @@ export default function ClawPoster({ product, compact = false }) {
       <Link href={`/product/${product._id}`} className="group rise relative block overflow-hidden rounded-3xl p-4 md:p-6" style={{ backgroundColor, color: ink }}>
         {marks}
         <div className="relative">
-          {collection && <p className="font-serif text-sm italic">Collection {collection}</p>}
-          <h3 className="mb-3 mt-0.5 font-serif text-xl font-bold leading-tight md:text-3xl">{title || colorName || product.title}</h3>
+          {/* Textes sur un aplat de la couleur du fond : le motif ne gêne pas la lecture */}
+          <div className="w-fit max-w-full rounded-xl px-3 py-2" style={{ backgroundColor }}>
+            {collection && <p className="font-serif text-sm italic">Collection {collection}</p>}
+            <h3 className="mt-0.5 font-serif text-xl font-bold leading-tight md:text-3xl">{title || colorName || product.title}</h3>
+          </div>
           {/* Photo réduite : le motif reste visible tout autour */}
           <div className="mx-auto my-5 w-[68%]">{photo}</div>
-          <p className="mt-3 flex flex-wrap items-baseline justify-between gap-x-3 font-semibold">
+          <p className="mt-3 flex flex-wrap items-baseline justify-between gap-x-3 rounded-xl px-3 py-2 font-semibold" style={{ backgroundColor }}>
             <span className="min-w-0 truncate text-sm">{product.title}</span>
             <span className="font-bold">{formatPrice(product.price)}</span>
           </p>
@@ -131,7 +161,7 @@ export default function ClawPoster({ product, compact = false }) {
     <section aria-label={`Affiche de ${product.title}`} className="group relative overflow-hidden rounded-3xl" style={{ backgroundColor, color: ink }}>
       {marks}
       <div className="relative grid items-center gap-6 p-6 md:grid-cols-2 md:gap-12 md:p-14">
-        <div>
+        <div className="rounded-2xl p-5 md:p-7" style={{ backgroundColor }}>
           {collection && <p className="font-serif text-xl italic md:text-2xl">Collection {collection}</p>}
           <h2 className="mt-1 font-serif text-5xl font-black leading-none md:text-7xl">{title || product.title}</h2>
           {colorName && <p className="mt-4 inline-block rounded-full px-4 py-1.5 text-sm font-semibold" style={{ backgroundColor: ink, color: backgroundColor }}>{colorName}</p>}
